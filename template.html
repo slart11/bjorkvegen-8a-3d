@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bjørkvegen 8A — Interaktiv 3D-modell (Charlottenlund)</title>
+  <style>__CSS__</style>
+</head>
+<body class="zombie-mode">
+  <div id="canvas-wrap">
+    <canvas id="gl"></canvas>
+  </div>
+
+  <div id="hurt-vignette"></div>
+  <div class="crosshair"><div id="hit-marker"></div></div>
+  <div id="interact-prompt" class="panel interact-prompt hud">Trykk E eller klikk for å åpne/lukke dør</div>
+  <div id="wave-banner" class="panel wave-banner"></div>
+
+  <div class="topbar hud">
+    <div class="panel brand">
+      <div class="brand-dot"></div>
+      <div>
+        <h1>Bjørkvegen 8A — Zombie-forsvar</h1>
+        <div class="sub">BRA 82 m² • Terrasse 21 m² • X-Shot Insanity</div>
+      </div>
+    </div>
+
+    <div class="panel zombie-hud" id="zombie-hud">
+      <div class="zh-item">
+        <span class="zh-label">HP</span>
+        <div class="hp-track"><div class="hp-fill" id="hp-fill"></div></div>
+        <strong id="hp-text">100</strong>
+      </div>
+      <div class="sep"></div>
+      <div class="zh-item"><span class="zh-label">Bølge</span><strong id="wave-text">1</strong></div>
+      <div class="sep"></div>
+      <div class="zh-item"><span class="zh-label">Zombier</span><strong id="zleft-text">8</strong></div>
+      <div class="sep"></div>
+      <div class="zh-item"><span class="zh-label">Poeng</span><strong id="score-text">0</strong></div>
+    </div>
+
+    <div class="panel controls-top">
+      <button class="btn active" id="btn-zombie" title="Veksle mellom Zombie-spill og rolig visning">Zombie-spill</button>
+      <button class="btn" id="btn-restart" title="Start ny runde fra bølge 1">Ny runde</button>
+      <div class="sep"></div>
+      <button class="btn active" id="btn-walk" title="Førstepersons visning">Gå rundt</button>
+      <button class="btn" id="btn-dollhouse" title="3D Dukkehus-oversikt">Dukkehus</button>
+      <div class="sep"></div>
+      <button class="btn active" data-light="sun" title="Ettermiddagssol som på bildene">Sol</button>
+      <button class="btn" data-light="soft" title="Mykt dagslys">Overskyet</button>
+      <button class="btn" data-light="evening" title="Kveldsstemning med lommelykt">Kveld</button>
+      <div class="sep"></div>
+      <button class="btn" id="btn-doors" title="Åpne eller lukk alle innerdører">Lukk innerdører</button>
+      <button class="btn" id="btn-help" title="Vis/skjul kontroller">Hjelp</button>
+    </div>
+  </div>
+
+  <div id="room-indicator" class="panel room-indicator hud">Stue og kjøkken (35,5 m²)</div>
+
+  <div id="help-card" class="panel help-card hud" style="display: none;">
+    <button class="help-close" id="help-close" title="Lukk">×</button>
+    <h3>Kontroller</h3>
+    <div>• <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / piltaster: Gå (<kbd>Shift</kbd> løp, <kbd>Space</kbd> hopp)</div>
+    <div>• <b>Klikk i bildet</b>: Lås sikte &amp; skyt (<kbd>Esc</kbd> frigjør)</div>
+    <div>• <b>Venstreklikk</b> / <kbd>F</kbd>: Skyt med X-Shot Nerf</div>
+    <div>• <kbd>R</kbd>: Lad om M-15-L magasin</div>
+    <div>• <kbd>E</kbd> eller klikk dør: Åpne / lukke dør</div>
+    <div>• <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>: Lys • <kbd>H</kbd>: Skjul menyer</div>
+  </div>
+
+  <div class="panel ammo-hud hud" id="ammo-hud">
+    <div class="ammo-brand">ZURU <span>X-SHOT INSANITY</span></div>
+    <div class="ammo-count"><strong id="ammo-cur">15</strong><span>/ <span id="ammo-res">72</span></span></div>
+    <button class="btn ammo-reload-btn" id="btn-reload" title="Lad om magasin (R)">Lad om [R]</button>
+  </div>
+
+  <div id="gameover-overlay" class="gameover-overlay">
+    <div class="panel gameover-card">
+      <h2>Zombiene tok deg!</h2>
+      <p id="gameover-stats">Bølge 1 • 0 poeng</p>
+      <button class="room-btn active" id="btn-gameover-restart">Spill på nytt</button>
+    </div>
+  </div>
+
+  <div class="panel minimap-wrap hud">
+    <div class="minimap-title">
+      <strong>Plantegning</strong>
+      <span>Klikk for å gå hit</span>
+    </div>
+    <canvas id="minimap" width="210" height="245"></canvas>
+  </div>
+
+  <script>__THREE_JS__</script>
+  <script>window.ART_DATA = __ART_DATA__;</script>
+  <script>__APP_SCRIPTS__</script>
+</body>
+</html>
