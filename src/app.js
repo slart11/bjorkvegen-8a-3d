@@ -284,7 +284,7 @@ window.APP = window.APP || {};
     if (e.code === 'KeyE') toggleNearestDoor();
     if (e.code === 'KeyH') document.body.classList.toggle('hud-hidden');
     if (e.code === 'KeyR') { blaster.sfx.unlock(); blaster.startReload(); }
-    if ((e.code === 'KeyF' || (e.code === 'Enter' && (!e.target || e.target.tagName !== 'BUTTON'))) && mode === 'walk' && zombies.game.active && !zombies.game.gameOver) {
+    if ((e.code === 'ControlLeft' || e.code === 'ControlRight' || e.code === 'KeyF' || (e.code === 'Enter' && (!e.target || e.target.tagName !== 'BUTTON'))) && mode === 'walk' && zombies.game.active && !zombies.game.gameOver) {
       if (e.code === 'Enter') e.preventDefault();
       blaster.sfx.unlock();
       blaster.fire(zombies);
