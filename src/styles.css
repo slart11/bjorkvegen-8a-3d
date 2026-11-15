@@ -101,7 +101,8 @@ canvas#minimap {
   box-shadow: 0 0 0 2px rgba(0,0,0,0.35);
   pointer-events: none; z-index: 15; opacity: 0; transition: opacity 0.2s;
 }
-body.pointer-locked .crosshair { opacity: 1; }
+body.pointer-locked .crosshair,
+body.no-mouse .crosshair { opacity: 1; }
 
 .interact-prompt {
   position: fixed; top: 55%; left: 50%; transform: translateX(-50%);

@@ -306,8 +306,8 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     stue: [5.45, 3.85],
     kitchen: [2.80, 1.90],
     dining: [4.55, 0.70],
-    entre_n: [3.92, 6.76],
-    entre_m: [3.92, 7.60],
+    entre_n: [3.76, 6.76],
+    entre_m: [3.78, 7.60],
     entre_s: [3.92, 8.75],
     sov1: [2.15, 5.25],
     bad: [1.85, 7.35],
@@ -336,20 +336,20 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   };
   // Directed doorway portals: [approachX, approachZ, exitX, exitZ] so zombies align perpendicular and pass strictly inside target room
   const DOOR_PORTALS = {
-    'stue|sov1': [3.65, 5.57, 2.66, 5.57],
-    'sov1|stue': [2.66, 5.57, 3.65, 5.57],
-    'stue|entre_n': [3.92, 6.22, 3.92, 6.88],
-    'entre_n|stue': [3.92, 6.82, 3.92, 6.12],
-    'entre_m|bad': [3.60, 7.50, 2.66, 7.50],
-    'bad|entre_m': [2.66, 7.50, 3.60, 7.50],
-    'entre_s|sov2': [3.60, 8.76, 2.66, 8.76],
-    'sov2|entre_s': [2.66, 8.76, 3.60, 8.76],
-    'entre_s|sov3': [4.24, 8.24, 5.20, 8.24],
-    'sov3|entre_s': [5.20, 8.24, 4.24, 8.24],
-    'sov3|bod': [6.84, 8.55, 6.84, 9.48],
-    'bod|sov3': [6.84, 9.48, 6.84, 8.55],
-    'dining|terrace_n': [5.42, 0.30, 6.45, 0.30],
-    'terrace_n|dining': [6.45, 0.30, 5.42, 0.30],
+    'stue|sov1': [3.68, 5.57, 2.64, 5.57],
+    'sov1|stue': [2.64, 5.57, 3.68, 5.57],
+    'stue|entre_n': [3.76, 6.18, 3.76, 6.94],
+    'entre_n|stue': [3.76, 6.94, 3.76, 6.12],
+    'entre_m|bad': [3.62, 7.50, 2.64, 7.50],
+    'bad|entre_m': [2.64, 7.50, 3.62, 7.50],
+    'entre_s|sov2': [3.62, 8.76, 2.64, 8.76],
+    'sov2|entre_s': [2.64, 8.76, 3.62, 8.76],
+    'entre_s|sov3': [4.22, 8.24, 5.22, 8.24],
+    'sov3|entre_s': [5.22, 8.24, 4.22, 8.24],
+    'sov3|bod': [6.84, 8.52, 6.84, 9.50],
+    'bod|sov3': [6.84, 9.50, 6.84, 8.52],
+    'dining|terrace_n': [5.40, 0.30, 6.48, 0.30],
+    'terrace_n|dining': [6.48, 0.30, 5.40, 0.30],
     'terrace_n|terrace_s': [8.60, 2.15, 8.85, 3.30],
     'terrace_s|terrace_n': [8.85, 3.30, 8.60, 2.15],
     'terrace_s|lawn': [9.60, 4.90, 10.55, 4.90],
@@ -360,15 +360,17 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     const dp = DOOR_PORTALS[`${fromNode}|${toNode}`];
     if (!dp) return NODES[toNode];
     const [ax, az, bx, bz] = dp;
-    // Step 1: line up perpendicular at approach side unless already closer to exit side than door midpoint
-    const midX = (ax + bx) * 0.5, midZ = (az + bz) * 0.5;
-    const dToExit = Math.hypot(pos.x - bx, pos.z - bz);
-    const dMidToExit = Math.hypot(midX - bx, midZ - bz);
-    const lateralErr = Math.abs((bx - ax) * (pos.z - az) - (bz - az) * (pos.x - ax)) / (Math.hypot(bx - ax, bz - az) || 1);
-    if (dToExit > dMidToExit + 0.05 && (lateralErr > 0.22 || Math.hypot(pos.x - ax, pos.z - az) > 0.35)) {
+    const dx = bx - ax, dz = bz - az;
+    const len = Math.hypot(dx, dz) || 1;
+    const along = ((pos.x - ax) * dx + (pos.z - az) * dz) / (len * len);
+    const perp = Math.abs((pos.x - ax) * (-dz) + (pos.z - az) * dx) / len;
+    // Line up strictly in front of the approach side before entering, never flip back once past 8%
+    if (along < 0.08 && (perp > 0.14 || along < -0.10)) {
       return [ax, az];
     }
-    return [bx, bz];
+    // Funnel straight down the dead-center of the doorway throat through to the exit side
+    const tAhead = Math.min(1.0, Math.max(0.55, along + 0.35));
+    return [ax + dx * tAhead, az + dz * tAhead];
   }
 
   function nearestNode(x, z) {
@@ -411,11 +413,11 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   const BREACH_PORTALS = [
     {
       name: 'Stue østvindu', isWindow: true, roomNode: 'stue',
-      spawn: [12.1, 4.9], outside: [8.52, 4.95], inside: [7.55, 4.95], viaLawnOpening: true
+      spawn: [12.1, 3.50], outside: [8.52, 3.50], inside: [7.45, 3.50], viaLawnOpening: true
     },
     {
       name: 'Terrassedør', isWindow: false, roomNode: 'dining', doorLabel: 'Terrassedør',
-      spawn: [11.9, 4.7], outside: [6.45, 0.30], inside: [5.35, 0.35], viaTerrace: true
+      spawn: [11.9, 4.7], outside: [6.48, 0.30], inside: [5.35, 0.30], viaTerrace: true
     },
     {
       name: 'Spiseplass nordvindu', isWindow: true, roomNode: 'dining',
@@ -423,7 +425,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     },
     {
       name: 'Kjøkken nordvindu', isWindow: true, roomNode: 'kitchen',
-      spawn: [2.55, -4.8], outside: [2.55, -0.50], inside: [2.55, 0.85]
+      spawn: [2.55, -4.8], outside: [2.55, -0.50], inside: [2.55, 0.95]
     },
     {
       name: 'Inngangsdør', isWindow: false, roomNode: 'entre_s', doorLabel: 'Inngangsdør (Smartlås)',
@@ -431,19 +433,19 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     },
     {
       name: 'Soverom 1 vindu', isWindow: true, roomNode: 'sov1',
-      spawn: [-2.6, 4.42], outside: [-0.48, 4.42], inside: [0.65, 4.42]
+      spawn: [-2.6, 4.42], outside: [-0.48, 4.42], inside: [0.75, 4.42]
     },
     {
       name: 'Bad vindu', isWindow: true, roomNode: 'bad',
-      spawn: [-2.6, 7.35], outside: [-0.48, 7.35], inside: [0.75, 7.35]
+      spawn: [-2.6, 7.35], outside: [-0.48, 7.35], inside: [1.05, 7.35]
     },
     {
       name: 'Soverom 2 vindu', isWindow: true, roomNode: 'sov2',
-      spawn: [-2.6, 9.25], outside: [-0.48, 9.25], inside: [0.65, 9.25]
+      spawn: [-2.6, 9.10], outside: [-0.48, 9.10], inside: [0.85, 9.10]
     },
     {
       name: 'Soverom 3 østvindu', isWindow: true, roomNode: 'sov3',
-      spawn: [11.2, 7.72], outside: [8.05, 7.72], inside: [6.95, 7.72]
+      spawn: [11.2, 7.95], outside: [8.05, 7.95], inside: [6.85, 8.05]
     }
   ];
 
@@ -600,8 +602,20 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       curRoom: portal.roomNode,
       detourSign: Math.random() < 0.5 ? 1 : -1,
       detourT: 0,
-      stuckT: 0
+      stuckT: 0,
+      watchX: rig.root.position.x,
+      watchZ: rig.root.position.z,
+      watchT: 0
     });
+  }
+
+  function isNearAnyDoorway(x, z) {
+    for (const k in DOOR_PORTALS) {
+      const dp = DOOR_PORTALS[k];
+      const mx = (dp[0] + dp[2]) * 0.5, mz = (dp[1] + dp[3]) * 0.5;
+      if (Math.hypot(x - mx, z - mz) < 0.75) return true;
+    }
+    return false;
   }
 
   function openDoorIfNear(x, z, doorLabel) {
@@ -613,7 +627,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         dx = (c.x1 + c.x2) * 0.5 - x;
         dz = (c.z1 + c.z2) * 0.5 - z;
       }
-      if (Math.hypot(dx, dz) < 1.65 && !d.isOpen) {
+      if (Math.hypot(dx, dz) < 1.90 && !d.isOpen) {
         d.isOpen = true;
         if (c) c.enabled = false;
         blaster.sfx.door();
@@ -621,7 +635,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     }
   }
 
-  function resolveZombieCollisions(pos, r = 0.21) {
+  function resolveZombieCollisions(pos, r = 0.14) {
     for (let pass = 0; pass < 2; pass++) {
       for (const c of arch.colliders) {
         if (!c.enabled) continue;
@@ -902,12 +916,15 @@ APP.createZombieSystem = function(scene, arch, blaster) {
           }
         }
         openDoorIfNear(pos.x, pos.z, null);
+        if (tx !== playerPos.x || tz !== playerPos.z) openDoorIfNear(tx, tz, null);
       }
 
       // Move toward (tx, tz), stopping cleanly 1.05m from player so full Minecraft body stays visible
       const dx = tx - pos.x, dz = tz - pos.z;
       const dist = Math.hypot(dx, dz);
       const isDirectPlayer = (tx === playerPos.x && tz === playerPos.z);
+      const inDoorCorridor = !isDirectPlayer || isNearAnyDoorway(pos.x, pos.z);
+      if (inDoorCorridor) z.detourT = 0; // Never steer perpendicular into door jambs
       const stopD = isDirectPlayer ? 1.05 : 0.05;
       if (dist > 0.05) {
         const targetYaw = Math.atan2(dx, dz);
@@ -917,12 +934,12 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         const step = Math.min(dist - stopD, z.speed * dt);
         const dirX = dx / dist, dirZ = dz / dist;
         const prevX = pos.x, prevZ = pos.z;
-        if (z.phase === 'chase' && z.detourT > 0) {
+        if (z.phase === 'chase' && !inDoorCorridor && z.detourT > 0) {
           z.detourT -= dt;
-          // Slide cleanly perpendicular around furniture, shafts & door jambs
+          // Slide cleanly around room furniture when chasing in open space
           const perpX = -dirZ * z.detourSign, perpZ = dirX * z.detourSign;
-          const steerX = dirX * 0.35 + perpX * 0.94;
-          const steerZ = dirZ * 0.35 + perpZ * 0.94;
+          const steerX = dirX * 0.45 + perpX * 0.89;
+          const steerZ = dirZ * 0.45 + perpZ * 0.89;
           const sLen = Math.hypot(steerX, steerZ) || 1;
           pos.x += (steerX / sLen) * step;
           pos.z += (steerZ / sLen) * step;
@@ -931,17 +948,33 @@ APP.createZombieSystem = function(scene, arch, blaster) {
           pos.z += dirZ * step;
         }
         if (z.phase === 'chase') {
-          resolveZombieCollisions(pos, 0.20);
+          resolveZombieCollisions(pos, 0.14);
           const moved = Math.hypot(pos.x - prevX, pos.z - prevZ);
           if (step > 0.004 && moved < step * 0.42) {
             z.stuckT += dt;
-            if (z.stuckT > 0.14) {
+            if (!inDoorCorridor && z.stuckT > 0.16) {
               if (z.detourT > 0) z.detourSign *= -1;
               z.detourT = 0.55;
               z.stuckT = 0;
             }
           } else {
             z.stuckT = Math.max(0, z.stuckT - dt * 2);
+          }
+
+          // Progress watchdog: if stalled near any threshold/corner for 0.85s, open nearby doors & advance along centerline
+          z.watchT += dt;
+          if (z.watchT > 0.85) {
+            const progressed = Math.hypot(pos.x - z.watchX, pos.z - z.watchZ);
+            if (progressed < 0.22 && dist > stopD + 0.15) {
+              openDoorIfNear(pos.x, pos.z, null);
+              pos.x += dirX * Math.min(0.32, dist * 0.5);
+              pos.z += dirZ * Math.min(0.32, dist * 0.5);
+              resolveZombieCollisions(pos, 0.14);
+              z.detourSign *= -1;
+            }
+            z.watchX = pos.x;
+            z.watchZ = pos.z;
+            z.watchT = 0;
           }
         }
       }
@@ -955,15 +988,18 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       z.rig.armL.rotation.x = -Math.PI / 2 + Math.sin(z.walkCycle * 0.7) * 0.14;
       z.rig.armR.rotation.x = -Math.PI / 2 - Math.sin(z.walkCycle * 0.7) * 0.14;
 
-      // Separation between overlapping zombies so they form a horde instead of one blob
-      for (let j = i - 1; j >= 0; j--) {
-        const oz = zombies[j].rig.root.position;
-        const sx = pos.x - oz.x, sz = pos.z - oz.z;
-        const sd = Math.hypot(sx, sz);
-        if (sd > 0.001 && sd < 0.55) {
-          const push = (0.55 - sd) * 0.5;
-          pos.x += (sx / sd) * push; pos.z += (sz / sd) * push;
-          oz.x -= (sx / sd) * push; oz.z -= (sz / sd) * push;
+      // Separation between overlapping zombies (suspended in narrow doorway corridors so they file through cleanly)
+      if (!inDoorCorridor) {
+        for (let j = i - 1; j >= 0; j--) {
+          const oz = zombies[j].rig.root.position;
+          if (isNearAnyDoorway(oz.x, oz.z)) continue;
+          const sx = pos.x - oz.x, sz = pos.z - oz.z;
+          const sd = Math.hypot(sx, sz);
+          if (sd > 0.001 && sd < 0.52) {
+            const push = (0.52 - sd) * 0.45;
+            pos.x += (sx / sd) * push; pos.z += (sz / sd) * push;
+            oz.x -= (sx / sd) * push; oz.z -= (sz / sd) * push;
+          }
         }
       }
 
@@ -973,6 +1009,9 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       if (z.phase === 'chase' && pd > 0.001 && pd < 0.78) {
         pos.x = playerPos.x + (px / pd) * 0.78;
         pos.z = playerPos.z + (pz / pd) * 0.78;
+      }
+      if (z.phase === 'chase') {
+        resolveZombieCollisions(pos, 0.14);
       }
 
       // Melee bite attack when reaching player

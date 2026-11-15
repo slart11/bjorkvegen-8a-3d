@@ -186,20 +186,44 @@ window.APP = window.APP || {};
     setActivePresetBtn(p.id);
     const toPos = new THREE.Vector3(...p.pos);
     const ang = lookAtAngles(p.pos, p.look);
+    const targetPitch = (controlMode === 'nomouse') ? 0 : ang.pitch;
     if (instant) {
       player.pos.copy(toPos);
       player.yaw = ang.yaw;
-      player.pitch = ang.pitch;
+      player.pitch = targetPitch;
       glide = null;
     } else {
       glide = {
         fromPos: player.pos.clone(), toPos,
         fromYaw: player.yaw, dYaw: shortAngleDiff(player.yaw, ang.yaw),
-        fromPitch: player.pitch, dPitch: ang.pitch - player.pitch,
+        fromPitch: player.pitch, dPitch: targetPitch - player.pitch,
         t: 0, dur: 0.55
       };
     }
   }
+
+  let controlMode = 'mouse';
+  function setControlMode(next) {
+    controlMode = (next === 'nomouse') ? 'nomouse' : 'mouse';
+    const noMouse = (controlMode === 'nomouse');
+    const btnMouse = document.getElementById('btn-ctrl-mouse');
+    const btnNoMouse = document.getElementById('btn-ctrl-nomouse');
+    btnMouse.classList.toggle('active', !noMouse);
+    btnNoMouse.classList.toggle('active', noMouse);
+    btnMouse.blur();
+    btnNoMouse.blur();
+    document.body.classList.toggle('no-mouse', noMouse);
+    if (noMouse) {
+      glide = null;
+      player.pitch = 0;
+      if (document.pointerLockElement === canvas) {
+        try { document.exitPointerLock(); } catch (_) {}
+      }
+    }
+  }
+  document.getElementById('btn-ctrl-mouse').addEventListener('click', () => setControlMode('mouse'));
+  document.getElementById('btn-ctrl-nomouse').addEventListener('click', () => setControlMode('nomouse'));
+
   goToPreset(PRESETS[0], true);
 
   function setMode(next) {
@@ -246,6 +270,9 @@ window.APP = window.APP || {};
   const keys = {};
   window.addEventListener('keydown', e => {
     keys[e.code] = true;
+    if (mode === 'walk' && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+      e.preventDefault();
+    }
     if (e.code === 'Space') {
       e.preventDefault();
       if (mode === 'walk' && !zombies.game.gameOver && player.grounded) {
@@ -257,7 +284,8 @@ window.APP = window.APP || {};
     if (e.code === 'KeyE') toggleNearestDoor();
     if (e.code === 'KeyH') document.body.classList.toggle('hud-hidden');
     if (e.code === 'KeyR') { blaster.sfx.unlock(); blaster.startReload(); }
-    if (e.code === 'KeyF' && mode === 'walk' && zombies.game.active && !zombies.game.gameOver) {
+    if ((e.code === 'KeyF' || (e.code === 'Enter' && (!e.target || e.target.tagName !== 'BUTTON'))) && mode === 'walk' && zombies.game.active && !zombies.game.gameOver) {
+      if (e.code === 'Enter') e.preventDefault();
       blaster.sfx.unlock();
       blaster.fire(zombies);
     }
@@ -271,6 +299,15 @@ window.APP = window.APP || {};
   canvas.addEventListener('mousedown', e => {
     if (e.button !== 0) return;
     blaster.sfx.unlock();
+    if (mode === 'walk' && controlMode === 'nomouse') {
+      const hitDoor = raycastDoorFromCenterOrMouse(e);
+      if (zombies.game.active && !zombies.game.gameOver) {
+        blaster.fire(zombies);
+      } else if (hitDoor) {
+        toggleDoor(hitDoor);
+      }
+      return;
+    }
     if (document.pointerLockElement === canvas && mode === 'walk' && zombies.game.active && !zombies.game.gameOver) {
       blaster.fire(zombies);
       return;
@@ -283,7 +320,7 @@ window.APP = window.APP || {};
     isDragging = false;
     canvas.classList.remove('dragging');
     // Short click (not drag) -> shoot or toggle door, plus request pointer lock in walk mode
-    if (dragMoved < 5 && mode === 'walk') {
+    if (dragMoved < 5 && mode === 'walk' && controlMode === 'mouse') {
       const hitDoor = raycastDoorFromCenterOrMouse(e);
       if (zombies.game.active && !zombies.game.gameOver) {
         blaster.fire(zombies);
@@ -298,6 +335,7 @@ window.APP = window.APP || {};
     }
   });
   window.addEventListener('mousemove', e => {
+    if (mode === 'walk' && controlMode === 'nomouse') return;
     if (document.pointerLockElement === canvas && mode === 'walk') {
       glide = null;
       player.yaw -= e.movementX * 0.0022;
@@ -660,12 +698,26 @@ window.APP = window.APP || {};
       }
 
       // WASD / Arrow movement
-      let fwd = 0, str = 0;
+      let fwd = 0, str = 0, turn = 0;
       if (!zombies.game.gameOver) {
         if (keys['KeyW'] || keys['ArrowUp']) fwd += 1;
         if (keys['KeyS'] || keys['ArrowDown']) fwd -= 1;
-        if (keys['KeyD'] || keys['ArrowRight']) str += 1;
-        if (keys['KeyA'] || keys['ArrowLeft']) str -= 1;
+        if (keys['KeyD']) str += 1;
+        if (keys['KeyA']) str -= 1;
+        if (controlMode === 'nomouse') {
+          if (keys['ArrowLeft']) turn += 1;
+          if (keys['ArrowRight']) turn -= 1;
+        } else {
+          if (keys['ArrowRight']) str += 1;
+          if (keys['ArrowLeft']) str -= 1;
+        }
+      }
+      if (controlMode === 'nomouse') {
+        if (turn !== 0) {
+          glide = null;
+          player.yaw += turn * 2.25 * dt;
+        }
+        player.pitch = 0;
       }
 
       if (fwd !== 0 || str !== 0) {
