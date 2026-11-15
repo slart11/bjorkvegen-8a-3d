@@ -229,15 +229,15 @@ window.APP = window.APP || {};
   function setMode(next) {
     mode = next;
     const isDoll = (mode === 'dollhouse');
-    document.getElementById('btn-walk').classList.toggle('active', !isDoll);
-    document.getElementById('btn-dollhouse').classList.toggle('active', isDoll);
+    document.getElementById('btn-walk')?.classList.toggle('active', !isDoll);
+    document.getElementById('btn-dollhouse')?.classList.toggle('active', isDoll);
     arch.ceilingGroup.visible = !isDoll;
     ext.upperGroup.visible = !isDoll;
     blaster.setVisible(!isDoll && zombies.game.active);
     if (isDoll && document.pointerLockElement === canvas) document.exitPointerLock();
   }
-  document.getElementById('btn-walk').addEventListener('click', () => setMode('walk'));
-  document.getElementById('btn-dollhouse').addEventListener('click', () => setMode('dollhouse'));
+  document.getElementById('btn-walk')?.addEventListener('click', () => setMode('walk'));
+  document.getElementById('btn-dollhouse')?.addEventListener('click', () => setMode('dollhouse'));
 
   // Zombie game toggles & restart buttons
   const btnZombie = document.getElementById('btn-zombie');
@@ -259,7 +259,7 @@ window.APP = window.APP || {};
     if (mode !== 'walk') setMode('walk');
     zombies.resetGame();
   }
-  document.getElementById('btn-restart').addEventListener('click', handleRestart);
+  document.getElementById('btn-restart')?.addEventListener('click', handleRestart);
   document.getElementById('btn-gameover-restart').addEventListener('click', handleRestart);
   document.getElementById('btn-reload').addEventListener('click', () => {
     blaster.sfx.unlock();
@@ -289,8 +289,8 @@ window.APP = window.APP || {};
       blaster.sfx.unlock();
       blaster.fire(zombies);
     }
-    if (e.code === 'Digit1') setLightMood('sun');
-    if (e.code === 'Digit2') setLightMood('soft');
+    if (e.code === 'Digit1' || e.code === 'Numpad1') setControlMode('mouse');
+    if (e.code === 'Digit2' || e.code === 'Numpad2') setControlMode('nomouse');
     if (e.code === 'Digit3') setLightMood('evening');
   });
   window.addEventListener('keyup', e => { keys[e.code] = false; });
@@ -438,12 +438,14 @@ window.APP = window.APP || {};
   });
   document.getElementById('btn-doors').textContent = 'Lukk innerdører';
 
-  // Help card toggle
+  // Help card toggle (optional if removed from HUD)
   const helpCard = document.getElementById('help-card');
-  document.getElementById('help-close').addEventListener('click', () => helpCard.style.display = 'none');
-  document.getElementById('btn-help').addEventListener('click', () => {
-    helpCard.style.display = helpCard.style.display === 'none' ? 'block' : 'none';
-  });
+  if (helpCard) {
+    document.getElementById('help-close')?.addEventListener('click', () => helpCard.style.display = 'none');
+    document.getElementById('btn-help')?.addEventListener('click', () => {
+      helpCard.style.display = helpCard.style.display === 'none' ? 'block' : 'none';
+    });
+  }
 
   // ==================== COLLISION RESOLUTION ====================
   function isOnLawn(x, z) {
