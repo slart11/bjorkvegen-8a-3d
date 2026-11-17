@@ -689,6 +689,17 @@ window.APP = window.APP || {};
           mctx.strokeRect(hx - 3.0, hy - 3.0, 6.0, 6.0);
         }
       }
+      if (zombies.getAmmoStates) {
+        for (const am of zombies.getAmmoStates()) {
+          if (!am.active) continue;
+          const [ax, ay] = toMM(am.x, am.z);
+          mctx.fillStyle = '#176fd6';
+          mctx.strokeStyle = '#ff621a';
+          mctx.lineWidth = 1.4;
+          mctx.fillRect(ax - 3.2, ay - 2.6, 6.4, 5.2);
+          mctx.strokeRect(ax - 3.2, ay - 2.6, 6.4, 5.2);
+        }
+      }
     }
   }
 

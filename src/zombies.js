@@ -471,19 +471,38 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     }
   }
 
-  // ==================== X-SHOT AMMO PICKUPS AROUND APARTMENT ====================
+  // ==================== X-SHOT AMMO CRATE (ONLY IN SW BEDROOM / SOVEROM 2) ====================
   const ammoPickups = [];
-  const pickupMatBlue = new THREE.MeshStandardMaterial({ color: 0x176fd6, emissive: 0x0c346b, emissiveIntensity: 0.45, roughness: 0.3 });
-  const pickupMatOrange = new THREE.MeshStandardMaterial({ color: 0xff621a, emissive: 0x6b2608, emissiveIntensity: 0.45, roughness: 0.35 });
-  const pickupCoords = [[2.35, 0.92, 1.45], [3.92, 0.05, 8.20], [8.92, 0.75, 2.55]];
+  const pickupMatBlue = new THREE.MeshStandardMaterial({ color: 0x176fd6, emissive: 0x0c346b, emissiveIntensity: 0.38, roughness: 0.35 });
+  const pickupMatOrange = new THREE.MeshStandardMaterial({ color: 0xff621a, emissive: 0x6b2608, emissiveIntensity: 0.42, roughness: 0.35 });
+  const pickupMatDark = new THREE.MeshStandardMaterial({ color: 0x1c2028, roughness: 0.55 });
+  const pickupCoords = [[0.62, 0.00, 8.58]];
   pickupCoords.forEach(([px, py, pz]) => {
     const pg = new THREE.Group();
-    const box = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.18), pickupMatBlue);
-    const band = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.05, 0.19), pickupMatOrange);
-    pg.add(box, band);
-    pg.position.set(px, py + 0.18, pz);
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.34, 0.46), pickupMatBlue);
+    box.position.y = 0.17;
+    box.castShadow = true; box.receiveShadow = true;
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(0.71, 0.06, 0.49), pickupMatDark);
+    lid.position.y = 0.34;
+    lid.castShadow = true;
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.08, 0.48), pickupMatOrange);
+    band.position.y = 0.21;
+    pg.add(box, lid, band);
+
+    // Row of large blue foam darts + orange tips displayed on top of crate
+    for (let d = -2; d <= 2; d++) {
+      const dartBody = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.16, 8), pickupMatBlue);
+      dartBody.rotation.z = Math.PI / 2;
+      dartBody.position.set(-0.02, 0.39, d * 0.065);
+      const dartTip = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), pickupMatOrange);
+      dartTip.position.set(0.065, 0.39, d * 0.065);
+      pg.add(dartBody, dartTip);
+    }
+
+    pg.position.set(px, py, pz);
+    pg.rotation.y = 0.22;
     scene.add(pg);
-    ammoPickups.push({ mesh: pg, pos: new THREE.Vector3(px, py + 0.18, pz), active: true, respawnT: 0 });
+    ammoPickups.push({ mesh: pg, pos: new THREE.Vector3(px, py, pz), active: true, respawnT: 0 });
   });
 
   // ==================== KITCHEN NOODLE BOWL (REFILLS HUNGER) ====================
@@ -1271,21 +1290,21 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       }
     }
 
-    // Spin & collect ammo pickups
+    // Collect big ammo crate in Soverom 2 (respawns cleanly after 10s)
     for (const pk of ammoPickups) {
       if (!pk.active) {
         pk.respawnT -= dt;
         if (pk.respawnT <= 0) { pk.active = true; pk.mesh.visible = true; }
         continue;
       }
-      pk.mesh.rotation.y += dt * 1.8;
-      if (Math.hypot(playerPos.x - pk.pos.x, playerPos.z - pk.pos.z) < 0.95) {
+      if (Math.hypot(playerPos.x - pk.pos.x, playerPos.z - pk.pos.z) < 1.15) {
         pk.active = false;
         pk.mesh.visible = false;
-        pk.respawnT = 20;
-        blaster.addAmmo(24);
+        pk.respawnT = 10;
+        blaster.addAmmo(45);
         blaster.sfx.wave();
-        showBanner('+24 X-Shot piler plukket opp!', 1.5);
+        spawnBurst(pk.pos.x, pk.pos.y + 0.28, pk.pos.z, orangeSparkMat, 8, 2.4, 0.045);
+        showBanner('+45 X-Shot piler plukket opp fra ammunisjonsesken!', 1.8);
       }
     }
 
@@ -1529,6 +1548,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   return {
     game, resetGame, setGameActive, raycastZombie, checkDartHit, setCatTarget,
     tryEatNoodles, getNoodleState: () => ({ active: noodleBowl.active, x: noodleBowl.pos.x, z: noodleBowl.pos.z }),
+    getAmmoStates: () => ammoPickups.map(p => ({ active: p.active, x: p.pos.x, z: p.pos.z })),
     getHomeworkState: () => ({ active: homework.active, timeLeft: homework.timeLeft, progress: homework.progress, needHold: homework.needHold, x: homework.pos.x, z: homework.pos.z }),
     update, getMinimapDots, getCatDot, isVipPending: () => vipPending
   };
