@@ -719,15 +719,16 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
       hg.add(rule);
     }
 
+    const pencilGroup = new THREE.Group();
     const pencil = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.16, 6), pencilMat);
     pencil.rotation.z = Math.PI / 2;
-    pencil.rotation.y = 0.38;
-    pencil.position.set(0.04, 0.022, 0.05);
     const eraser = new THREE.Mesh(new THREE.CylinderGeometry(0.0062, 0.0062, 0.018, 6), eraserMat);
     eraser.rotation.z = Math.PI / 2;
-    eraser.rotation.y = 0.38;
-    eraser.position.set(-0.032, 0.022, 0.022);
-    hg.add(pencil, eraser);
+    eraser.position.set(-0.078, 0, 0);
+    pencilGroup.add(pencil, eraser);
+    pencilGroup.rotation.y = 0.38;
+    pencilGroup.position.set(0.02, 0.024, 0.04);
+    hg.add(pencilGroup);
 
     const beacon = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.012, 8, 22), beaconMat);
     beacon.rotation.x = Math.PI / 2;
@@ -737,7 +738,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     hg.position.set(4.50 * S, 0.746, 0.52 * S);
     hg.visible = false;
     scene.add(hg);
-    return { mesh: hg, beacon };
+    return { mesh: hg, beacon, pencilGroup };
   }
   const hwVisual = createHomeworkMesh();
   const homework = {
@@ -752,6 +753,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     pos: new THREE.Vector3(4.50 * S, 0.746, 0.52 * S),
     mesh: hwVisual.mesh,
     beacon: hwVisual.beacon,
+    pencilGroup: hwVisual.pencilGroup,
     phase: 0
   };
 
@@ -1871,8 +1873,16 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
       homework.holding = nearHw && holdE && !homework.interrupted;
       if (homework.holding) {
         homework.progress = Math.min(hwHold, homework.progress + dt);
+        homework.pencilGroup.position.set(
+          Math.sin(homework.phase * 3.8) * 0.055,
+          0.036 + Math.abs(Math.sin(homework.phase * 7.6)) * 0.012,
+          Math.cos(homework.phase * 2.1) * 0.045
+        );
+        homework.pencilGroup.rotation.z = 0.45 + Math.sin(homework.phase * 5.2) * 0.14;
       } else {
         homework.progress = 0;
+        homework.pencilGroup.position.set(0.02, 0.024, 0.04);
+        homework.pencilGroup.rotation.z = 0;
       }
 
       if (homework.progress >= hwHold || homework.timeLeft <= 0) {
@@ -2334,7 +2344,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     resetGame, setGameActive, raycastZombie, checkDartHit, setCatTarget,
     tryEatNoodles, tryRefillAmmo, getNoodleState: () => ({ active: noodleBowl.active, x: noodleBowl.pos.x, z: noodleBowl.pos.z }),
     getAmmoStates: () => ammoPickups.map(p => ({ active: p.active, x: p.pos.x, z: p.pos.z })),
-    getHomeworkState: () => ({ active: homework.active, timeLeft: homework.timeLeft, progress: homework.progress, needHold: getHwNeedHold(), x: homework.pos.x, z: homework.pos.z }),
+    getHomeworkState: () => ({ active: homework.active, holding: homework.holding, timeLeft: homework.timeLeft, progress: homework.progress, needHold: getHwNeedHold(), x: homework.pos.x, z: homework.pos.z }),
     update, getMinimapDots, getCatDot, getIsaDot, isVipPending: () => vipPending
   };
 };

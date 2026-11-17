@@ -771,6 +771,7 @@ window.APP = window.APP || {};
   const promptEl = document.getElementById('interact-prompt');
   const hwProgressWrap = document.getElementById('hw-progress-wrap');
   const hwProgressFill = document.getElementById('hw-progress-fill');
+  const hwWriteAnim = document.getElementById('hw-write-anim');
   const hwHudSep = document.getElementById('hw-hud-sep');
   const hwHud = document.getElementById('hw-hud');
   const hwTimerEl = document.getElementById('hw-timer');
@@ -1062,8 +1063,10 @@ window.APP = window.APP || {};
           hwProgressWrap.classList.add('show');
           hwProgressFill.style.width = `${Math.min(100, (hsPrompt.progress / hsPrompt.needHold) * 100)}%`;
         }
+        if (hwWriteAnim) hwWriteAnim.classList.toggle('show', !!(hsPrompt.holding && hsPrompt.progress > 0));
       } else {
         if (hwProgressWrap) hwProgressWrap.classList.remove('show');
+        if (hwWriteAnim) hwWriteAnim.classList.remove('show');
         if (nearNoodles) {
           promptEl.textContent = 'Varme nudler (+35 HP) — Trykk E for å spise';
           promptEl.classList.add('show');

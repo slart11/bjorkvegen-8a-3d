@@ -147,6 +147,41 @@ body.no-mouse .crosshair { opacity: 1; }
   background: linear-gradient(90deg, #59c8ff, #4cd964);
   transition: width 0.05s linear;
 }
+.hw-write-anim {
+  display: none; position: fixed; top: 65%; left: 50%; transform: translateX(-50%);
+  pointer-events: none; z-index: 19;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.55));
+}
+.hw-write-anim.show { display: block; }
+.hw-pencil {
+  transform-box: fill-box; transform-origin: center;
+  animation: hw-pencil-write 1.15s ease-in-out infinite;
+}
+.hw-ink { stroke-dasharray: 85; stroke-dashoffset: 85; }
+.hw-write-anim.show .hw-ink-1 { animation: hw-draw 1.4s ease-out infinite; }
+.hw-write-anim.show .hw-ink-2 { animation: hw-draw 1.4s 0.25s ease-out infinite; }
+.hw-write-anim.show .hw-ink-3 { animation: hw-draw 1.4s 0.5s ease-out infinite; }
+.hw-write-anim.show .hw-ink-4 { animation: hw-draw 1.4s 0.75s ease-out infinite; }
+.hw-spark {
+  animation: hw-spark-pulse 0.55s ease-in-out infinite alternate;
+}
+@keyframes hw-pencil-write {
+  0%   { transform: translate(-6px, -16px) rotate(-4deg); }
+  25%  { transform: translate(18px, -13px) rotate(5deg); }
+  50%  { transform: translate(-4px, -2px) rotate(-5deg); }
+  75%  { transform: translate(20px, 2px) rotate(4deg); }
+  100% { transform: translate(-6px, -16px) rotate(-4deg); }
+}
+@keyframes hw-draw {
+  0%   { stroke-dashoffset: 85; opacity: 0.3; }
+  45%  { stroke-dashoffset: 0; opacity: 1; }
+  85%  { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 85; opacity: 0.25; }
+}
+@keyframes hw-spark-pulse {
+  from { opacity: 0.35; r: 2.2; }
+  to   { opacity: 0.95; r: 4.5; }
+}
 
 /* Room badge */
 .room-indicator {
@@ -467,6 +502,67 @@ body.zombie-mode .skills-hud.has-skills { display: flex; }
   <div class="crosshair"><div id="hit-marker"></div></div>
   <div id="interact-prompt" class="panel interact-prompt hud">Trykk E eller klikk for å åpne/lukke dør</div>
   <div id="hw-progress-wrap" class="panel hw-progress-wrap hud"><div id="hw-progress-fill" class="hw-progress-fill"></div></div>
+  <div id="hw-write-anim" class="hw-write-anim" aria-hidden="true">
+    <svg viewBox="0 0 210 156" width="185" height="138">
+      <defs>
+        <linearGradient id="hw-cover" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#3b82f6"/>
+          <stop offset="100%" stop-color="#1d4ed8"/>
+        </linearGradient>
+        <linearGradient id="hw-page-l" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#fefce8"/>
+          <stop offset="85%" stop-color="#fef9c3"/>
+          <stop offset="100%" stop-color="#d6d3d1"/>
+        </linearGradient>
+        <linearGradient id="hw-page-r" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#e7e5e4"/>
+          <stop offset="18%" stop-color="#fffbeb"/>
+          <stop offset="100%" stop-color="#fef9c3"/>
+        </linearGradient>
+        <linearGradient id="hw-pencil-body" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#fde047"/>
+          <stop offset="55%" stop-color="#f59e0b"/>
+          <stop offset="100%" stop-color="#b45309"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Open textbook cover & binding shadow -->
+      <rect x="18" y="34" width="174" height="106" rx="8" fill="url(#hw-cover)" stroke="#1e3a8a" stroke-width="2.5"/>
+      <rect x="24" y="38" width="80" height="96" rx="3" fill="url(#hw-page-l)" stroke="#94a3b8" stroke-width="1"/>
+      <rect x="106" y="38" width="80" height="96" rx="3" fill="url(#hw-page-r)" stroke="#94a3b8" stroke-width="1"/>
+      <line x1="105" y1="36" x2="105" y2="136" stroke="#64748b" stroke-width="2"/>
+      <!-- Red bookmark ribbon -->
+      <polygon points="101,134 109,134 109,151 105,146 101,151" fill="#ef4444" stroke="#991b1b" stroke-width="1"/>
+
+      <!-- Left page completed notes & formulas -->
+      <path d="M35 54 H92 M35 67 H88 M35 80 H94 M35 93 H82 M35 106 H90 M35 119 H76" stroke="#93c5fd" stroke-width="1.2"/>
+      <path d="M36 53 Q48 48 60 53 T88 52 M36 66 Q50 61 66 66 T86 65 M36 79 Q46 74 58 79 T90 78 M36 92 Q52 88 78 92" fill="none" stroke="#1e293b" stroke-width="2.1" stroke-linecap="round"/>
+
+      <!-- Right page ruled paper + live animated handwriting lines -->
+      <path d="M116 54 H176 M116 67 H176 M116 80 H176 M116 93 H176 M116 106 H176 M116 119 H176" stroke="#93c5fd" stroke-width="1.2"/>
+      <path class="hw-ink hw-ink-1" d="M117 52 Q127 46 138 52 T162 51 T174 53" fill="none" stroke="#0f172a" stroke-width="2.4" stroke-linecap="round"/>
+      <path class="hw-ink hw-ink-2" d="M117 65 Q128 59 140 65 T165 64 T175 66" fill="none" stroke="#0f172a" stroke-width="2.4" stroke-linecap="round"/>
+      <path class="hw-ink hw-ink-3" d="M117 78 Q129 73 142 78 T166 77 T174 79" fill="none" stroke="#1d4ed8" stroke-width="2.4" stroke-linecap="round"/>
+      <path class="hw-ink hw-ink-4" d="M117 91 Q130 86 144 91 T169 90" fill="none" stroke="#0f172a" stroke-width="2.4" stroke-linecap="round"/>
+
+      <!-- Animated writing golden wooden pencil -->
+      <g class="hw-pencil">
+        <g transform="translate(136 68) rotate(-36)">
+          <!-- Pink eraser + aluminum ferrule -->
+          <rect x="52" y="-6" width="12" height="12" rx="3" fill="#f472b6" stroke="#be185d" stroke-width="1.3"/>
+          <rect x="44" y="-6" width="9" height="12" fill="#e2e8f0" stroke="#64748b" stroke-width="1.2"/>
+          <!-- Yellow hexagonal barrel -->
+          <rect x="0" y="-6" width="45" height="12" fill="url(#hw-pencil-body)" stroke="#78350f" stroke-width="1.3"/>
+          <line x1="2" y1="-2" x2="43" y2="-2" stroke="#fef9c3" stroke-width="1.3" opacity="0.75"/>
+          <!-- Sharpened wood tip + dark graphite lead -->
+          <polygon points="0,-6 -16,0 0,6" fill="#fed7aa" stroke="#9a3412" stroke-width="1.2" stroke-linejoin="round"/>
+          <polygon points="-10,-2.3 -17,0 -10,2.3" fill="#1e293b"/>
+        </g>
+        <!-- Tiny writing spark near pencil tip -->
+        <circle class="hw-spark" cx="122" cy="79" r="3.2" fill="#38bdf8"/>
+      </g>
+    </svg>
+  </div>
   <div id="hw-big-banner" class="panel hw-big-banner">
     <div class="hw-big-top">
       <strong>Gjør lekser!</strong>
@@ -4855,15 +4951,16 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
       hg.add(rule);
     }
 
+    const pencilGroup = new THREE.Group();
     const pencil = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.16, 6), pencilMat);
     pencil.rotation.z = Math.PI / 2;
-    pencil.rotation.y = 0.38;
-    pencil.position.set(0.04, 0.022, 0.05);
     const eraser = new THREE.Mesh(new THREE.CylinderGeometry(0.0062, 0.0062, 0.018, 6), eraserMat);
     eraser.rotation.z = Math.PI / 2;
-    eraser.rotation.y = 0.38;
-    eraser.position.set(-0.032, 0.022, 0.022);
-    hg.add(pencil, eraser);
+    eraser.position.set(-0.078, 0, 0);
+    pencilGroup.add(pencil, eraser);
+    pencilGroup.rotation.y = 0.38;
+    pencilGroup.position.set(0.02, 0.024, 0.04);
+    hg.add(pencilGroup);
 
     const beacon = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.012, 8, 22), beaconMat);
     beacon.rotation.x = Math.PI / 2;
@@ -4873,7 +4970,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     hg.position.set(4.50 * S, 0.746, 0.52 * S);
     hg.visible = false;
     scene.add(hg);
-    return { mesh: hg, beacon };
+    return { mesh: hg, beacon, pencilGroup };
   }
   const hwVisual = createHomeworkMesh();
   const homework = {
@@ -4888,6 +4985,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     pos: new THREE.Vector3(4.50 * S, 0.746, 0.52 * S),
     mesh: hwVisual.mesh,
     beacon: hwVisual.beacon,
+    pencilGroup: hwVisual.pencilGroup,
     phase: 0
   };
 
@@ -6007,8 +6105,16 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
       homework.holding = nearHw && holdE && !homework.interrupted;
       if (homework.holding) {
         homework.progress = Math.min(hwHold, homework.progress + dt);
+        homework.pencilGroup.position.set(
+          Math.sin(homework.phase * 3.8) * 0.055,
+          0.036 + Math.abs(Math.sin(homework.phase * 7.6)) * 0.012,
+          Math.cos(homework.phase * 2.1) * 0.045
+        );
+        homework.pencilGroup.rotation.z = 0.45 + Math.sin(homework.phase * 5.2) * 0.14;
       } else {
         homework.progress = 0;
+        homework.pencilGroup.position.set(0.02, 0.024, 0.04);
+        homework.pencilGroup.rotation.z = 0;
       }
 
       if (homework.progress >= hwHold || homework.timeLeft <= 0) {
@@ -6470,7 +6576,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     resetGame, setGameActive, raycastZombie, checkDartHit, setCatTarget,
     tryEatNoodles, tryRefillAmmo, getNoodleState: () => ({ active: noodleBowl.active, x: noodleBowl.pos.x, z: noodleBowl.pos.z }),
     getAmmoStates: () => ammoPickups.map(p => ({ active: p.active, x: p.pos.x, z: p.pos.z })),
-    getHomeworkState: () => ({ active: homework.active, timeLeft: homework.timeLeft, progress: homework.progress, needHold: getHwNeedHold(), x: homework.pos.x, z: homework.pos.z }),
+    getHomeworkState: () => ({ active: homework.active, holding: homework.holding, timeLeft: homework.timeLeft, progress: homework.progress, needHold: getHwNeedHold(), x: homework.pos.x, z: homework.pos.z }),
     update, getMinimapDots, getCatDot, getIsaDot, isVipPending: () => vipPending
   };
 };
@@ -7250,6 +7356,7 @@ window.APP = window.APP || {};
   const promptEl = document.getElementById('interact-prompt');
   const hwProgressWrap = document.getElementById('hw-progress-wrap');
   const hwProgressFill = document.getElementById('hw-progress-fill');
+  const hwWriteAnim = document.getElementById('hw-write-anim');
   const hwHudSep = document.getElementById('hw-hud-sep');
   const hwHud = document.getElementById('hw-hud');
   const hwTimerEl = document.getElementById('hw-timer');
@@ -7541,8 +7648,10 @@ window.APP = window.APP || {};
           hwProgressWrap.classList.add('show');
           hwProgressFill.style.width = `${Math.min(100, (hsPrompt.progress / hsPrompt.needHold) * 100)}%`;
         }
+        if (hwWriteAnim) hwWriteAnim.classList.toggle('show', !!(hsPrompt.holding && hsPrompt.progress > 0));
       } else {
         if (hwProgressWrap) hwProgressWrap.classList.remove('show');
+        if (hwWriteAnim) hwWriteAnim.classList.remove('show');
         if (nearNoodles) {
           promptEl.textContent = 'Varme nudler (+35 HP) — Trykk E for å spise';
           promptEl.classList.add('show');
