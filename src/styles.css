@@ -81,6 +81,25 @@ body.hud-hidden .hud { opacity: 0; pointer-events: none; }
   position: fixed; top: 62px; right: 14px; z-index: 20;
   padding: 7px; display: flex; flex-direction: column; gap: 4px;
 }
+body.zombie-mode .minimap-wrap { top: 128px; }
+.hunger-hud {
+  display: none; position: fixed; top: 62px; right: 14px; z-index: 20;
+  width: 186px; padding: 9px 12px; flex-direction: column; gap: 6px;
+}
+body.zombie-mode .hunger-hud { display: flex; }
+.hunger-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.hunger-top span {
+  font-size: 12px; font-weight: 800; letter-spacing: 0.06em; color: #ffe094;
+}
+.hunger-top strong {
+  font-size: 15px; font-weight: 800; color: #ffffff;
+}
+.hunger-track {
+  width: 100%; height: 15px; border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14); overflow: hidden;
+}
 .minimap-title {
   display: flex; justify-content: space-between; align-items: center;
   font-size: 10px; color: var(--muted); padding: 0 2px;
@@ -192,7 +211,8 @@ body.zombie-mode .zombie-hud { display: flex; }
   width: 100%; height: 100%; background: #4cd964; transition: width 0.15s ease, background 0.2s;
 }
 .hunger-fill {
-  width: 100%; height: 100%; background: #ffbe2e; transition: width 0.15s ease, background 0.2s;
+  width: 100%; height: 100%; border-radius: 8px;
+  background: #ffbe2e; transition: width 0.15s ease, background 0.2s;
 }
 
 .ammo-hud {

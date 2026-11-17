@@ -859,7 +859,7 @@ window.APP = window.APP || {};
       if (hungerFill && hungerText) {
         hungerFill.style.width = `${gState.hunger}%`;
         hungerFill.style.background = gState.hunger > 50 ? '#ffbe2e' : (gState.hunger > 25 ? '#ff7b29' : '#ff3b30');
-        hungerText.textContent = Math.ceil(gState.hunger);
+        hungerText.textContent = `${Math.ceil(gState.hunger)}%`;
       }
       if (hwHud && hwHudSep && hwTimerEl && zombies.getHomeworkState) {
         const hsHud = zombies.getHomeworkState();
