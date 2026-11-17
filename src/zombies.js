@@ -979,6 +979,14 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     return z && z.phase !== 'dying' && zombies.includes(z);
   }
 
+  function flashZombieRed(z) {
+    z.flashT = 0.22;
+    z.rig.flashMats.forEach(m => {
+      m.color.setHex(0xff3838);
+      m.emissive.setHex(0xb81414);
+    });
+  }
+
   function updateCat(dt, playerPos, playerRoom) {
     cat.rig.root.visible = game.active;
     if (!game.active) return;
@@ -1071,11 +1079,10 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         cat.biteCooldown = 0.65;
         cat.lungeT = 0.22;
         z.hp -= 2;
-        z.flashT = 0.14;
-        z.rig.flashMats.forEach(m => m.emissive.setHex(0x881111));
+        flashZombieRed(z);
         if (blaster.sfx.catBite) blaster.sfx.catBite();
         else blaster.sfx.hit(false);
-        spawnBurst(tPos.x, 0.65, tPos.z, orangeSparkMat, 6, 3.0, 0.042);
+        spawnBurst(tPos.x, 0.65, tPos.z, greenMat, 6, 3.0, 0.042);
         game.hitMarkerT = 0.16;
         game.hitWasHead = false;
         if (z.hp <= 0) {
@@ -1167,8 +1174,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     const p = z.rig.root.position;
     const dmg = isHead ? 2 : 1;
     z.hp -= dmg;
-    z.flashT = 0.14;
-    z.rig.flashMats.forEach(m => m.emissive.setHex(0x881111));
+    flashZombieRed(z);
     sfx.hit(isHead);
     spawnBurst(pt.x, pt.y, pt.z, isHead ? orangeSparkMat : greenMat, 6, 3.0, 0.04);
 
@@ -1350,7 +1356,12 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       // Clear red damage tint
       if (z.flashT > 0) {
         z.flashT -= dt;
-        if (z.flashT <= 0) z.rig.flashMats.forEach(m => m.emissive.setHex(0x000000));
+        if (z.flashT <= 0) {
+          z.rig.flashMats.forEach(m => {
+            m.color.setHex(0xffffff);
+            m.emissive.setHex(0x000000);
+          });
+        }
       }
 
       // Death tip-over animation
