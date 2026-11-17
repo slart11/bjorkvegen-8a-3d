@@ -56,19 +56,9 @@ deploy_root_index = os.path.join(deploy_dir, "index.html")
 deploy_sub_index = os.path.join(deploy_sub, "index.html")
 zip_path = os.path.join(BASE, "netlify-deploy.zip")
 
-for p in (out_html, index_html, deploy_sub_index):
+for p in (out_html, index_html, deploy_root_index, deploy_sub_index):
     with open(p, "w", encoding="utf-8") as f:
         f.write(html)
-
-redirect_html = (
-    '<!DOCTYPE html><html lang="nb"><head><meta charset="utf-8">'
-    '<meta http-equiv="refresh" content="0; url=/bjorkvegen8a/">'
-    '<title>Bjørkvegen 8A</title></head>'
-    '<body><script>location.replace("/bjorkvegen8a/");</script>'
-    '<a href="/bjorkvegen8a/">Åpne Bjørkvegen 8A 3D</a></body></html>\n'
-)
-with open(deploy_root_index, "w", encoding="utf-8") as f:
-    f.write(redirect_html)
 
 with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
     zf.write(deploy_root_index, arcname="index.html")
