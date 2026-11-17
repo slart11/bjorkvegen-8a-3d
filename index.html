@@ -5844,34 +5844,27 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         homework.progress = 0;
       }
 
-      if (homework.progress >= hwHold) {
+      if (homework.progress >= hwHold || homework.timeLeft <= 0) {
+        const completed = homework.progress >= hwHold;
         homework.active = false;
         homework.mesh.visible = false;
         homework.progress = 0;
         homework.holding = false;
         homework.interrupted = false;
         homework.spawnTimer = 17 + Math.random() * 8;
-        game.level = (game.level || 1) + 1;
-        game.score += 200;
-        blaster.sfx.wave();
-        spawnBurst(homework.pos.x, homework.pos.y + 0.12, homework.pos.z, orangeSparkMat, 10, 2.5, 0.045);
-        if (hasSelectableTalent()) {
-          game.talentOpen = true;
+        if (completed) {
+          game.level = (game.level || 1) + 1;
+          game.score += 200;
+          blaster.sfx.wave();
+          spawnBurst(homework.pos.x, homework.pos.y + 0.12, homework.pos.z, orangeSparkMat, 10, 2.5, 0.045);
+          if (hasSelectableTalent()) {
+            game.talentOpen = true;
+          } else {
+            showBanner(`Lekser ferdig! Nivå ${game.level} (+200 poeng)`, 2.6);
+          }
         } else {
-          showBanner(`Lekser ferdig! Nivå ${game.level} (+200 poeng)`, 2.6);
+          showBanner('Du rakk ikke leksene på 20s! Ingen nivåoppstigning.', 3.0);
         }
-      } else if (homework.timeLeft <= 0) {
-        homework.active = false;
-        homework.mesh.visible = false;
-        homework.progress = 0;
-        homework.holding = false;
-        homework.interrupted = false;
-        homework.spawnTimer = 17 + Math.random() * 8;
-        game.hp = Math.max(0, game.hp - 35);
-        game.hurtFlash = 0.85;
-        blaster.sfx.hurt();
-        showBanner('Du rakk ikke leksene på 20s! Ingen nivåoppstigning (-35 HP)', 3.0);
-        if (game.hp <= 0) game.gameOver = true;
       }
     }
 
