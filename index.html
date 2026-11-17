@@ -4326,8 +4326,51 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       const armL = makeVipArm(-0.28);
       const armR = makeVipArm(0.28);
 
-      root.add(legL, legR, torso, belt, skirt, head, hairBack, hairCrown, hairLockL, hairLockR, armL, armR);
-      return { root, legL, legR, armL, armR, head, torso, flashMats };
+      // 3D speech bubble floating above the blonde VIP zombie's head
+      const sbCanvas = document.createElement('canvas');
+      sbCanvas.width = 768;
+      sbCanvas.height = 192;
+      const sbCtx = sbCanvas.getContext('2d');
+      sbCtx.clearRect(0, 0, sbCanvas.width, sbCanvas.height);
+
+      // Rounded bubble rectangle + tail pointing down at her head
+      const bx = 24, by = 14, bw = 720, bh = 124, br = 30;
+      sbCtx.fillStyle = '#ffffff';
+      sbCtx.strokeStyle = '#0f172a';
+      sbCtx.lineWidth = 7;
+      sbCtx.beginPath();
+      sbCtx.moveTo(bx + br, by);
+      sbCtx.lineTo(bx + bw - br, by);
+      sbCtx.quadraticCurveTo(bx + bw, by, bx + bw, by + br);
+      sbCtx.lineTo(bx + bw, by + bh - br);
+      sbCtx.quadraticCurveTo(bx + bw, by + bh, bx + bw - br, by + bh);
+      sbCtx.lineTo(414, by + bh);
+      sbCtx.lineTo(384, by + bh + 40);
+      sbCtx.lineTo(354, by + bh);
+      sbCtx.lineTo(bx + br, by + bh);
+      sbCtx.quadraticCurveTo(bx, by + bh, bx, by + bh - br);
+      sbCtx.lineTo(bx, by + br);
+      sbCtx.quadraticCurveTo(bx, by, bx + br, by);
+      sbCtx.closePath();
+      sbCtx.fill();
+      sbCtx.stroke();
+
+      sbCtx.fillStyle = '#0f172a';
+      sbCtx.font = '800 39px "Segoe UI", system-ui, sans-serif';
+      sbCtx.textAlign = 'center';
+      sbCtx.textBaseline = 'middle';
+      sbCtx.fillText('Gi meg parkeringsplassen min', 384, by + bh / 2);
+
+      const sbTex = new THREE.CanvasTexture(sbCanvas);
+      sbTex.encoding = THREE.sRGBEncoding;
+      const sbMat = new THREE.SpriteMaterial({ map: sbTex, transparent: true, depthWrite: false });
+      const speechBubble = new THREE.Sprite(sbMat);
+      speechBubble.position.set(0, 2.02, 0);
+      speechBubble.scale.set(1.56, 0.39, 1);
+      speechBubble.renderOrder = 12;
+
+      root.add(legL, legR, torso, belt, skirt, head, hairBack, hairCrown, hairLockL, hairLockR, armL, armR, speechBubble);
+      return { root, legL, legR, armL, armR, head, torso, flashMats, speechBubble };
     }
 
     // Clone materials per zombie so brief red damage flash is independent
@@ -6002,6 +6045,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
 
       // Death tip-over animation (Creepers explode immediately upon death)
       if (z.phase === 'dying') {
+        if (z.rig.speechBubble) z.rig.speechBubble.visible = false;
         if (z.isCreeper) {
           explodeCreeperAt(z, i, playerPos);
           continue;
