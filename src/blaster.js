@@ -91,6 +91,12 @@ APP.createBlasterSystem = function(scene, camera, arch) {
       // Sharp cat hiss/meow + snappy bite chomp
       playTone('triangle', 860, 520, 0.11, 0.14);
       playNoise(0.08, 2200, 1.5, 0.14, true);
+    },
+    eat() {
+      // Cozy warm noodle slurp + chime
+      playNoise(0.14, 700, 1.2, 0.12);
+      playTone('triangle', 480, 720, 0.11, 0.14);
+      setTimeout(() => playTone('triangle', 720, 960, 0.15, 0.13), 100);
     }
   };
 

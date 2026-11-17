@@ -281,7 +281,10 @@ window.APP = window.APP || {};
         glide = null;
       }
     }
-    if (e.code === 'KeyE') toggleNearestDoor();
+    if (e.code === 'KeyE') {
+      if (zombies.tryEatNoodles && zombies.tryEatNoodles(player.pos)) return;
+      toggleNearestDoor();
+    }
     if (e.code === 'KeyH') document.body.classList.toggle('hud-hidden');
     if (e.code === 'KeyR') { blaster.sfx.unlock(); blaster.startReload(); }
     if ((e.code === 'ControlLeft' || e.code === 'ControlRight' || e.code === 'KeyF' || (e.code === 'Enter' && (!e.target || e.target.tagName !== 'BUTTON'))) && mode === 'walk' && zombies.game.active && !zombies.game.gameOver) {
@@ -662,6 +665,17 @@ window.APP = window.APP || {};
         mctx.fill();
         mctx.stroke();
       }
+      if (zombies.getNoodleState) {
+        const ns = zombies.getNoodleState();
+        if (ns.active) {
+          const [nx, ny] = toMM(ns.x, ns.z);
+          mctx.fillStyle = '#ffbe2e';
+          mctx.strokeStyle = '#ffffff';
+          mctx.lineWidth = 1.0;
+          mctx.fillRect(nx - 2.6, ny - 2.6, 5.2, 5.2);
+          mctx.strokeRect(nx - 2.6, ny - 2.6, 5.2, 5.2);
+        }
+      }
     }
   }
 
@@ -671,6 +685,8 @@ window.APP = window.APP || {};
   const promptEl = document.getElementById('interact-prompt');
   const hpFill = document.getElementById('hp-fill');
   const hpText = document.getElementById('hp-text');
+  const hungerFill = document.getElementById('hunger-fill');
+  const hungerText = document.getElementById('hunger-text');
   const waveText = document.getElementById('wave-text');
   const zleftText = document.getElementById('zleft-text');
   const scoreText = document.getElementById('score-text');
@@ -769,9 +785,14 @@ window.APP = window.APP || {};
       euler.set(player.pitch, player.yaw, 0, 'YXZ');
       camera.quaternion.setFromEuler(euler);
 
-      // Door hover prompt
-      const lookDoor = raycastDoorFromCenterOrMouse(null);
-      if (lookDoor) {
+      // Noodle / Door hover prompt
+      const nsPrompt = (zombies.game.active && !zombies.game.gameOver && zombies.getNoodleState) ? zombies.getNoodleState() : null;
+      const nearNoodles = nsPrompt && nsPrompt.active && Math.hypot(player.pos.x - nsPrompt.x, player.pos.z - nsPrompt.z) < 2.05;
+      const lookDoor = nearNoodles ? null : raycastDoorFromCenterOrMouse(null);
+      if (nearNoodles) {
+        promptEl.textContent = 'Varme nudler — Trykk E eller gå inntil for å spise';
+        promptEl.classList.add('show');
+      } else if (lookDoor) {
         promptEl.textContent = `${lookDoor.label} — Trykk E eller klikk for å ${lookDoor.isOpen ? 'lukke' : 'åpne'}`;
         promptEl.classList.add('show');
       } else {
@@ -801,7 +822,12 @@ window.APP = window.APP || {};
       const aliveCount = gState.toSpawn + (zombies.isVipPending() ? 1 : 0) + zombies.getMinimapDots().filter(d => !d.dying).length;
       hpFill.style.width = `${gState.hp}%`;
       hpFill.style.background = gState.hp > 50 ? '#4cd964' : (gState.hp > 25 ? '#ff9f0a' : '#ff3b30');
-      hpText.textContent = gState.hp;
+      hpText.textContent = Math.ceil(gState.hp);
+      if (hungerFill && hungerText) {
+        hungerFill.style.width = `${gState.hunger}%`;
+        hungerFill.style.background = gState.hunger > 50 ? '#ffbe2e' : (gState.hunger > 25 ? '#ff7b29' : '#ff3b30');
+        hungerText.textContent = Math.ceil(gState.hunger);
+      }
       waveText.textContent = gState.wave;
       zleftText.textContent = aliveCount;
       scoreText.textContent = gState.score;

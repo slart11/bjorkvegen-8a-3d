@@ -180,6 +180,9 @@ body.zombie-mode .zombie-hud { display: flex; }
 .hp-fill {
   width: 100%; height: 100%; background: #4cd964; transition: width 0.15s ease, background 0.2s;
 }
+.hunger-fill {
+  width: 100%; height: 100%; background: #ffbe2e; transition: width 0.15s ease, background 0.2s;
+}
 
 .ammo-hud {
   display: none; position: fixed; bottom: 14px; left: 14px; width: auto;
