@@ -303,9 +303,9 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   // ==================== ROOM GRAPH & EXTERIOR BREACH PORTALS ====================
   // Waypoints so zombies entering through ANY bedroom/bath/living window or door navigate doorways cleanly
   const NODES = {
-    stue: [5.45, 3.85],
+    stue: [5.20, 5.35],
     kitchen: [2.80, 1.90],
-    dining: [4.55, 0.70],
+    dining: [4.55, 1.35],
     entre_n: [3.76, 6.76],
     entre_m: [3.78, 7.60],
     entre_s: [3.92, 8.75],
@@ -348,8 +348,8 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     'sov3|entre_s': [5.22, 8.24, 4.22, 8.24],
     'sov3|bod': [6.84, 8.52, 6.84, 9.50],
     'bod|sov3': [6.84, 9.50, 6.84, 8.52],
-    'dining|terrace_n': [5.40, 0.30, 6.48, 0.30],
-    'terrace_n|dining': [6.48, 0.30, 5.40, 0.30],
+    'dining|terrace_n': [5.35, 0.48, 6.48, 0.48],
+    'terrace_n|dining': [6.48, 0.48, 5.35, 0.48],
     'terrace_n|terrace_s': [8.60, 2.15, 8.85, 3.30],
     'terrace_s|terrace_n': [8.85, 3.30, 8.60, 2.15],
     'terrace_s|lawn': [9.60, 4.90, 10.55, 4.90],
@@ -413,11 +413,15 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   const BREACH_PORTALS = [
     {
       name: 'Stue østvindu', isWindow: true, roomNode: 'stue',
-      spawn: [12.1, 3.50], outside: [8.52, 3.50], inside: [7.45, 3.50], viaLawnOpening: true
+      spawn: [12.1, 3.50], outside: [8.52, 3.50], inside: [6.65, 4.25], viaLawnOpening: true
+    },
+    {
+      name: 'Stue stort østvindu', isWindow: true, roomNode: 'stue',
+      spawn: [12.1, 4.95], outside: [8.52, 4.95], inside: [6.75, 4.95], viaLawnOpening: true
     },
     {
       name: 'Terrassedør', isWindow: false, roomNode: 'dining', doorLabel: 'Terrassedør',
-      spawn: [11.9, 4.7], outside: [6.48, 0.30], inside: [5.35, 0.30], viaTerrace: true
+      spawn: [11.9, 4.7], outside: [6.48, 0.48], inside: [5.35, 0.48], viaTerrace: true
     },
     {
       name: 'Spiseplass nordvindu', isWindow: true, roomNode: 'dining',
@@ -452,6 +456,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   // ==================== PARTICLE BURSTS (GLASS SHARDS & BLOCKY SPARKS) ====================
   const particles = [];
   const shardMat = new THREE.MeshStandardMaterial({ color: 0xcfe9f8, roughness: 0.15, transparent: true, opacity: 0.78 });
+  const slatDebrisMat = new THREE.MeshStandardMaterial({ color: 0xf4f2ed, roughness: 0.45 });
   const greenMat = new THREE.MeshBasicMaterial({ color: 0x5ca63d });
   const orangeSparkMat = new THREE.MeshBasicMaterial({ color: 0xff6b21 });
 
@@ -661,49 +666,59 @@ APP.createZombieSystem = function(scene, arch, blaster) {
 
   // ==================== 3x3 TALENT TREE ====================
   const TALENT_COLS = [
-    { id: 'fysisk', title: 'Fysisk' },
+    { id: 'fysisk', title: 'Kropp og sinn' },
     { id: 'dyr', title: 'Dyr' },
     { id: 'vapen', title: 'Våpen' }
   ];
   const TALENT_NODES = [
     {
       id: 'spark', col: 'fysisk', row: 0, parent: null, title: 'Spark', maxLvl: 5,
-      desc: 'Zombien sparkes 2 meter bak. (+2 m per oppgradering opp til 10 m) • Tast [Q]'
+      desc: 'Zombien sparkes 2 m bak (+2 m per nivå, maks 10 m). Gjør 2 skade hvis den treffer et objekt • Tast [Q]'
     },
     {
       id: 'armor', col: 'fysisk', row: 1, parent: 'spark', title: 'Tykke klær', maxLvl: 1,
-      desc: '+30 maks HP og zombier gjør halvparten så mye skade når de biter deg.'
+      desc: 'Reduserer skade fra zombier med 30%.'
     },
     {
-      id: 'fysisk_3', col: 'fysisk', row: 2, parent: 'armor', title: 'Kommer snart', maxLvl: 0,
-      desc: 'Låses opp av Tykke klær.'
+      id: 'iq', col: 'fysisk', row: 2, parent: 'armor', title: 'Høyere IQ', maxLvl: 3,
+      desc: 'Reduserer tid på lekser med 1 sekund per trykk (3s -> 2s -> 1s -> øyeblikkelig).'
     },
     {
       id: 'taurus', col: 'dyr', row: 0, parent: null, title: 'Taurus', maxLvl: 5,
-      desc: 'Få hjelp av den svarte katten Taurus. (+1 skade per angrep opp til 5)'
+      desc: 'Få hjelp av den svarte katten Taurus som jakter og biter zombier automatisk. (+1 skade per nivå, maks 5)'
     },
     {
       id: 'isa', col: 'dyr', row: 1, parent: 'taurus', title: 'Isa', maxLvl: 1,
       desc: 'En stor hvit sveitsisk schäfer angriper alle zombier i 5 sek (1 slag dreper!). Cooldown 20s • Tast [C]'
     },
     {
-      id: 'dyr_3', col: 'dyr', row: 2, parent: 'isa', title: 'Kommer snart', maxLvl: 0,
-      desc: 'Låses opp av Isa.'
+      id: 'pack', col: 'dyr', row: 2, parent: 'isa', title: 'Lojal flokk', maxLvl: 3,
+      desc: 'Hvert kill fra Taurus eller Isa helbreder deg (+3 HP per nivå).'
     },
     {
-      id: 'grenade', col: 'vapen', row: 0, parent: null, title: 'Granatskudd', maxLvl: 1,
-      desc: 'Granatskudd som eksploderer. 10 sekund cooldown • [G] eller Høyreklikk'
+      id: 'frost', col: 'vapen', row: 0, parent: null, title: 'Frostkuler', maxLvl: 3,
+      desc: 'Kulene fryser zombier du treffer så de går saktere: 20% -> 40% -> 60%.'
     },
     {
-      id: 'pierce', col: 'vapen', row: 1, parent: 'grenade', title: 'Gjennomskudd', maxLvl: 1,
+      id: 'pierce', col: 'vapen', row: 1, parent: 'frost', title: 'Gjennomskudd', maxLvl: 1,
       desc: 'Kulene går rett gjennom zombier og treffer flere zombier på rad!'
     },
     {
-      id: 'vapen_3', col: 'vapen', row: 2, parent: 'pierce', title: 'Kommer snart', maxLvl: 0,
-      desc: 'Låses opp av Gjennomskudd.'
+      id: 'grenade', col: 'vapen', row: 2, parent: 'pierce', title: 'Granatskudd', maxLvl: 1,
+      desc: 'Granatskudd som eksploderer. 10 sekund cooldown • [G] eller Høyreklikk'
     }
   ];
-  const talents = { spark: 0, armor: 0, taurus: 0, isa: 0, grenade: 0, pierce: 0 };
+  const talents = { spark: 0, armor: 0, iq: 0, taurus: 0, isa: 0, pack: 0, grenade: 0, pierce: 0, frost: 0 };
+
+  function healFromPetKill() {
+    if (talents.pack > 0) {
+      game.hp = Math.min(game.maxHp, game.hp + talents.pack * 3);
+    }
+  }
+
+  function getHwNeedHold() {
+    return Math.max(0.05, 3.0 - (talents.iq || 0));
+  }
 
   function isTalentUnlocked(node) {
     return !node.parent || (talents[node.parent] || 0) >= 1;
@@ -724,9 +739,6 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       cat.rig.root.position.set(4.80, 0, 4.10);
       cat.rig.root.visible = game.active;
       pickCatRoamGoal('stue');
-    } else if (id === 'armor' && cur === 0) {
-      game.maxHp = 130;
-      game.hp = Math.min(game.maxHp, game.hp + 30);
     }
     game.talentOpen = false;
     blaster.sfx.wave();
@@ -763,7 +775,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     game.spawnTimer = 0.5;
     vipPending = (num === 1);
     vipTimer = (num === 1) ? 8.0 : 0;
-    game.talentOpen = hasSelectableTalent();
+    game.talentOpen = (num >= 2) && hasSelectableTalent();
     if (!game.talentOpen) {
       blaster.sfx.wave();
       showBanner(`BØLGE ${num} — Zombiene angriper gjennom vinduer og dører!`, 3.2);
@@ -792,6 +804,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     game.betweenWavesT = 0;
     blaster.resetAmmo();
     if (blaster.resetWorldDamage) blaster.resetWorldDamage();
+    if (arch.resetBlinds) arch.resetBlinds();
     ammoPickups.forEach(p => { p.active = true; p.mesh.visible = true; p.respawnT = 0; });
     noodleBowl.active = false;
     noodleBowl.mesh.visible = false;
@@ -840,6 +853,8 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     homework.mesh.visible = flag && homework.active;
     if (!flag) {
       clearZombies();
+      while (particles.length) scene.remove(particles.pop().mesh);
+      if (arch.resetBlinds) arch.resetBlinds();
     } else if (zombies.length === 0 && game.toSpawn === 0 && game.betweenWavesT <= 0) {
       resetGame();
     }
@@ -848,7 +863,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   function spawnOneZombie(forceVip = false) {
     const isVip = forceVip;
     // VIP Minecraft character enters through the Front Door (Inngangsdør) down the hallway toward the living room!
-    const portal = isVip ? BREACH_PORTALS[4] : BREACH_PORTALS[Math.floor(Math.random() * BREACH_PORTALS.length)];
+    const portal = isVip ? (BREACH_PORTALS.find(p => p.name === 'Inngangsdør') || BREACH_PORTALS[5]) : BREACH_PORTALS[Math.floor(Math.random() * BREACH_PORTALS.length)];
     const armored = !isVip && game.wave >= 2 && Math.random() < Math.min(0.45, (game.wave - 1) * 0.16);
     const runner = !isVip && game.wave >= 3 && Math.random() < 0.25;
     const scale = armored ? 1.04 : 0.98 + Math.random() * 0.06;
@@ -896,7 +911,10 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       watchT: 0,
       knockVx: 0,
       knockVz: 0,
-      knockT: 0
+      knockT: 0,
+      knockWallDmg: false,
+      frostT: 0,
+      frostSlow: 0
     });
   }
 
@@ -1108,6 +1126,16 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     }
 
     const cPos = cat.rig.root.position;
+    if (!cat.target) {
+      let bestZ = null, bestD = Infinity;
+      for (const z of zombies) {
+        if (z.phase === 'dying') continue;
+        const zp = z.rig.root.position;
+        const d = Math.hypot(zp.x - cPos.x, zp.z - cPos.z);
+        if (d < bestD) { bestD = d; bestZ = z; }
+      }
+      if (bestZ) cat.target = bestZ;
+    }
     const hunting = !!cat.target;
     let tx = cat.roamX;
     let tz = cat.roamZ;
@@ -1199,6 +1227,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
           z.deathT = 0.75;
           game.kills++;
           game.score += 100;
+          healFromPetKill();
           cat.target = null;
         }
       }
@@ -1375,6 +1404,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
           flashZombieRed(z);
           game.kills++;
           game.score += 120;
+          healFromPetKill();
           if (cat.target === z) cat.target = null;
           spawnBurst(p.x, 0.75, p.z, orangeSparkMat, 10, 4.0, 0.055);
           if (isa.biteCooldown <= 0) {
@@ -1411,6 +1441,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     if (!game.active || game.gameOver || game.talentOpen || talents.spark <= 0 || game.kickCooldown > 0) return false;
     game.kickCooldown = 1.25;
     if (blaster.sfx.kick) blaster.sfx.kick();
+    if (blaster.triggerKickAnim) blaster.triggerKickAnim();
     const pushDist = talents.spark * 2;
     const kickDur = 0.25;
     let kickedCount = 0;
@@ -1428,9 +1459,9 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         z.knockVx = ax * (pushDist / kickDur);
         z.knockVz = az * (pushDist / kickDur);
         z.knockT = kickDur;
+        z.knockWallDmg = true;
         z.detourT = 0;
         z.stuckT = 0;
-        flashZombieRed(z);
         spawnBurst(p.x, 0.65, p.z, orangeSparkMat, 7, 3.2, 0.045);
         kickedCount++;
       }
@@ -1551,6 +1582,11 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     const p = z.rig.root.position;
     const dmg = isHead ? 2 : 1;
     z.hp -= dmg;
+    if (talents.frost > 0) {
+      z.frostT = 5.0;
+      z.frostSlow = Math.min(0.60, talents.frost * 0.20);
+      spawnBurst(pt.x, pt.y, pt.z, shardMat, 4, 2.2, 0.04);
+    }
     flashZombieRed(z);
     sfx.hit(isHead);
     spawnBurst(pt.x, pt.y, pt.z, isHead ? orangeSparkMat : greenMat, 6, 3.0, 0.04);
@@ -1665,21 +1701,23 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         homework.progress = 0;
         homework.mesh.visible = true;
         blaster.sfx.wave();
-        showBanner('Lekser på spisebordet! Hold E i 3s innen 20s!', 3.2);
+        const hwHold = getHwNeedHold();
+        showBanner(hwHold <= 0.1 ? 'Lekser på spisebordet! Trykk E innen 20s!' : `Lekser på spisebordet! Hold E i ${hwHold}s innen 20s!`, 3.2);
       }
     } else {
       homework.phase += dt * 4.5;
       homework.beacon.position.y = 0.16 + Math.sin(homework.phase) * 0.05;
       homework.timeLeft = Math.max(0, homework.timeLeft - dt);
 
+      const hwHold = getHwNeedHold();
       const nearHw = Math.hypot(playerPos.x - homework.pos.x, playerPos.z - homework.pos.z) < 2.15;
       if (nearHw && holdE) {
-        homework.progress = Math.min(homework.needHold, homework.progress + dt);
+        homework.progress = Math.min(hwHold, homework.progress + dt);
       } else {
         homework.progress = 0;
       }
 
-      if (homework.progress >= homework.needHold) {
+      if (homework.progress >= hwHold) {
         homework.active = false;
         homework.mesh.visible = false;
         homework.progress = 0;
@@ -1754,15 +1792,34 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       const z = zombies[i];
       const pos = z.rig.root.position;
 
-      // Clear red damage tint
-      if (z.flashT > 0) {
-        z.flashT -= dt;
-        if (z.flashT <= 0) {
+      // Frost slow countdown & damage/frost tint management
+      if (z.frostT > 0) {
+        z.frostT = Math.max(0, z.frostT - dt);
+        if (z.frostT <= 0 && z.flashT <= 0) {
           z.rig.flashMats.forEach(m => {
             m.color.setHex(0xffffff);
             m.emissive.setHex(0x000000);
           });
         }
+      }
+      if (z.flashT > 0) {
+        z.flashT -= dt;
+        if (z.flashT <= 0) {
+          z.rig.flashMats.forEach(m => {
+            if (z.frostT > 0) {
+              m.color.setHex(0x76d4ff);
+              m.emissive.setHex(0x164a70);
+            } else {
+              m.color.setHex(0xffffff);
+              m.emissive.setHex(0x000000);
+            }
+          });
+        }
+      } else if (z.frostT > 0) {
+        z.rig.flashMats.forEach(m => {
+          m.color.setHex(0x76d4ff);
+          m.emissive.setHex(0x164a70);
+        });
       }
 
       // Death tip-over animation
@@ -1779,16 +1836,37 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         continue;
       }
 
-      // Apply kick / grenade blast knockback slide with wall collision clamping
+      // Apply kick / grenade blast knockback slide with wall/object impact damage
       if (z.knockT > 0) {
         const kdt = Math.min(dt, z.knockT);
         z.knockT -= kdt;
         const steps = 4;
         const sd = kdt / steps;
         for (let s = 0; s < steps; s++) {
-          pos.x += z.knockVx * sd;
-          pos.z += z.knockVz * sd;
+          const bx = pos.x + z.knockVx * sd;
+          const bz = pos.z + z.knockVz * sd;
+          pos.x = bx;
+          pos.z = bz;
           resolveZombieCollisions(pos, 0.14);
+          if (Math.hypot(pos.x - bx, pos.z - bz) > 0.008) {
+            if (z.knockWallDmg) {
+              z.knockWallDmg = false;
+              z.hp -= 2;
+              flashZombieRed(z);
+              blaster.sfx.hit(false);
+              spawnBurst(pos.x, 0.7, pos.z, greenMat, 8, 3.2, 0.05);
+              game.hitMarkerT = 0.18;
+              game.hitWasHead = false;
+              if (z.hp <= 0) {
+                z.phase = 'dying';
+                z.deathT = 0.75;
+                game.kills++;
+                game.score += 100;
+              }
+            }
+            z.knockT = 0;
+            break;
+          }
         }
         continue;
       }
@@ -1819,6 +1897,25 @@ APP.createZombieSystem = function(scene, arch, blaster) {
           if (pr.isWindow) {
             blaster.sfx.glass();
             spawnBurst((pr.outside[0] + pr.inside[0]) * 0.5, 1.35, (pr.outside[1] + pr.inside[1]) * 0.5, shardMat, 14, 4.2, 0.065);
+            if (arch.blindSlats && arch.blindSlats.length) {
+              const ax = pr.outside[0], az = pr.outside[1];
+              const bx = pr.inside[0], bz = pr.inside[1];
+              const vx = bx - ax, vz = bz - az;
+              const vLenSq = vx * vx + vz * vz || 1;
+              let brokeSlats = 0;
+              for (const s of arch.blindSlats) {
+                if (s.broken) continue;
+                const tSeg = Math.max(0, Math.min(1, ((s.wx - ax) * vx + (s.wz - az) * vz) / vLenSq));
+                const px = ax + vx * tSeg, pz = az + vz * tSeg;
+                if (Math.hypot(s.wx - px, s.wz - pz) <= 0.34) {
+                  s.broken = true;
+                  s.mesh.visible = false;
+                  brokeSlats++;
+                  spawnBurst(s.wx, 1.35, s.wz, slatDebrisMat, 4, 3.8, 0.075);
+                }
+              }
+              if (brokeSlats > 0) blaster.sfx.chip();
+            }
           } else {
             openDoorIfNear(pr.outside[0], pr.outside[1], pr.doorLabel);
           }
@@ -1865,8 +1962,9 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         const targetYaw = Math.atan2(dx, dz);
         z.rig.root.rotation.y = targetYaw;
       }
+      const effSpeed = z.speed * (z.frostT > 0 ? Math.max(0.40, 1 - z.frostSlow) : 1);
       if (dist > stopD) {
-        const step = Math.min(dist - stopD, z.speed * dt);
+        const step = Math.min(dist - stopD, effSpeed * dt);
         const dirX = dx / dist, dirZ = dz / dist;
         const prevX = pos.x, prevZ = pos.z;
         if (z.phase === 'chase' && !inDoorCorridor && z.detourT > 0) {
@@ -1956,7 +2054,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         z.atkCooldown = 1.05;
         game.hurtCooldown = 0.65;
         game.hurtFlash = 0.75;
-        const biteDmg = talents.armor > 0 ? 7 : 15;
+        const biteDmg = talents.armor > 0 ? Math.round(15 * 0.7) : 15;
         game.hp = Math.max(0, game.hp - biteDmg);
         blaster.sfx.hurt();
         if (game.hp <= 0) {
@@ -1982,7 +2080,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     resetGame, setGameActive, raycastZombie, checkDartHit, setCatTarget,
     tryEatNoodles, getNoodleState: () => ({ active: noodleBowl.active, x: noodleBowl.pos.x, z: noodleBowl.pos.z }),
     getAmmoStates: () => ammoPickups.map(p => ({ active: p.active, x: p.pos.x, z: p.pos.z })),
-    getHomeworkState: () => ({ active: homework.active, timeLeft: homework.timeLeft, progress: homework.progress, needHold: homework.needHold, x: homework.pos.x, z: homework.pos.z }),
+    getHomeworkState: () => ({ active: homework.active, timeLeft: homework.timeLeft, progress: homework.progress, needHold: getHwNeedHold(), x: homework.pos.x, z: homework.pos.z }),
     update, getMinimapDots, getCatDot, getIsaDot, isVipPending: () => vipPending
   };
 };

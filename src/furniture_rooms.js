@@ -16,22 +16,21 @@ APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
   doorMat.position.set(3.92, 0.007, 10.12);
   g.add(eRug, doorMat);
 
-  // Floating Oak Wall Console on East wall (X = 4.30..4.62, Z = 6.82..7.62, Y = 0.72..1.30)
-  const oakCon = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.56, 0.78), mats.oakFurniture);
-  oakCon.position.set(4.46, 1.00, 7.22);
-  oakCon.castShadow = true; oakCon.receiveShadow = true;
-  g.add(oakCon);
-  arch.addBoxCollider(4.46, 7.22, 0.34, 0.80);
+  // Very small slim white floating shelf on East hallway wall (under wavy mirror)
+  const smallShelf = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.022, 0.42), mats.doorWhite);
+  smallShelf.position.set(4.55, 1.18, 7.22);
+  smallShelf.castShadow = true; smallShelf.receiveShadow = true;
+  g.add(smallShelf);
 
-  // Ribbed cream vase + pink peonies on oak console
-  const eVase = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.095, 0.24, 16), mats.ceramicWhite);
-  eVase.position.set(4.46, 1.40, 7.22);
+  // Ribbed cream vase + pink peonies resting on small white shelf
+  const eVase = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.072, 0.20, 16), mats.ceramicWhite);
+  eVase.position.set(4.55, 1.29, 7.22);
   eVase.castShadow = true;
   g.add(eVase);
   const peonyMat = new THREE.MeshStandardMaterial({ color: 0xe8a4ad, roughness: 0.75 });
   for (let i = 0; i < 6; i++) {
-    const fl = new THREE.Mesh(new THREE.SphereGeometry(0.036, 8, 6), peonyMat);
-    fl.position.set(4.46 + Math.cos(i * 1.1) * 0.05, 1.56 + (i % 2) * 0.04, 7.22 + Math.sin(i * 1.1) * 0.05);
+    const fl = new THREE.Mesh(new THREE.SphereGeometry(0.030, 8, 6), peonyMat);
+    fl.position.set(4.55 + Math.cos(i * 1.1) * 0.04, 1.42 + (i % 2) * 0.035, 7.22 + Math.sin(i * 1.1) * 0.04);
     g.add(fl);
   }
 
@@ -62,12 +61,8 @@ APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
   g.add(ward, wardSeam);
   arch.addBoxCollider(4.92, 9.70, 0.56, 1.30);
 
-  // West hallway wall: Hanging white planter with pothos (Z=8.18) & wooden key cabinet (Z=9.65)
+  // West hallway wall: Hanging white planter with pothos (Z=8.18)
   addPlant('hanging', 3.30, 1.72, 8.18, 0.88);
-  const keyBox = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.30, 0.24), mats.oakFurniture);
-  keyBox.position.set(3.27, 1.48, 9.65);
-  keyBox.castShadow = true;
-  g.add(keyBox);
 
   // ==================== 2. BAD (5,5 m²) ====================
   // Concrete-look wetroom wall panels inside corner shower (X = 0..0.92, Z = 6.24..7.14)

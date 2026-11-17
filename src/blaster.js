@@ -354,6 +354,31 @@ APP.createBlasterSystem = function(scene, camera, arch) {
   vmRoot.add(blaster);
   camera.add(vmRoot);
 
+  // First-person kicking leg + sneaker viewmodel (swings forward when pressing Q)
+  const kickRoot = new THREE.Group();
+  const mDenim = new THREE.MeshStandardMaterial({ color: 0x2a4066, roughness: 0.8 });
+  const mSole = new THREE.MeshStandardMaterial({ color: 0xe6eaf0, roughness: 0.6 });
+  const mSneaker = new THREE.MeshStandardMaterial({ color: 0x1b1e24, roughness: 0.65 });
+  const kickShin = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.36, 0.11), mDenim);
+  kickShin.position.set(0, 0.02, -0.14);
+  kickShin.rotation.x = 0.75;
+  const kickShoe = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.085, 0.24), mSneaker);
+  kickShoe.position.set(0, -0.02, -0.34);
+  const kickSole = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.026, 0.245), mSole);
+  kickSole.position.set(0, -0.065, -0.34);
+  const kickAccent = new THREE.Mesh(new THREE.BoxGeometry(0.128, 0.025, 0.09), mOrange);
+  kickAccent.position.set(0, 0.015, -0.37);
+  kickRoot.add(kickShin, kickShoe, kickSole, kickAccent);
+  kickRoot.position.set(-0.14, -0.36, -0.12);
+  kickRoot.visible = false;
+  camera.add(kickRoot);
+  let kickAnimT = 0;
+
+  function triggerKickAnim() {
+    kickAnimT = 0.34;
+    kickRoot.visible = true;
+  }
+
   // Warm flashlight spotlight mounted under muzzle (especially atmospheric in Kveld mode!)
   const flashSpot = new THREE.SpotLight(0xfff5e0, 0.0, 14, Math.PI * 0.24, 0.55, 1.4);
   flashSpot.position.set(0, -0.02, -0.30);
@@ -374,7 +399,7 @@ APP.createBlasterSystem = function(scene, camera, arch) {
     return false;
   }
   scene.traverse(obj => {
-    if (!obj.isMesh || obj === flashMesh || isDescendant(obj, vmRoot)) return;
+    if (!obj.isMesh || obj === flashMesh || isDescendant(obj, vmRoot) || isDescendant(obj, kickRoot)) return;
     if (obj.material && obj.material.side === THREE.BackSide) return;
     if (obj.material && obj.material.transparent && obj.material.opacity < 0.7) return;
     bounceMeshes.push(obj);
@@ -397,9 +422,6 @@ APP.createBlasterSystem = function(scene, camera, arch) {
 
   // ==================== DESTRUCTIBLE WALLS & FURNITURE DEBRIS ====================
   const debris = [];
-  const chipMarks = [];
-  const chipGeo = new THREE.BoxGeometry(0.10, 0.10, 0.014);
-  const chipMat = new THREE.MeshStandardMaterial({ color: 0x26211c, roughness: 0.95 });
   const fallbackDebrisMat = new THREE.MeshStandardMaterial({ color: 0xcfc6b6, roughness: 0.85 });
   const chunkGeo = new THREE.BoxGeometry(1, 1, 1);
 
@@ -452,31 +474,12 @@ APP.createBlasterSystem = function(scene, camera, arch) {
     }
   }
 
-  function removeChipMarksFor(mesh) {
-    for (let i = chipMarks.length - 1; i >= 0; i--) {
-      if (chipMarks[i].owner === mesh) {
-        scene.remove(chipMarks[i].mesh);
-        chipMarks.splice(i, 1);
-      }
-    }
-  }
-
   function damageMesh(mesh, pt, normal, faceIndex, dmg = 1) {
     spawnDebris(mesh, pt, normal, faceIndex, dmg >= 2 ? 8 : 5, dmg >= 2 ? 1.25 : 1.0);
     if (!mesh.userData.destructible || mesh.userData.noDestroy) return;
     mesh.userData.hp -= dmg;
     if (mesh.userData.hp > 0) {
       sfx.chip();
-      if (chipMarks.length >= 120) {
-        const oldMark = chipMarks.shift();
-        scene.remove(oldMark.mesh);
-      }
-      const mark = new THREE.Mesh(chipGeo, chipMat);
-      mark.position.copy(pt).addScaledVector(normal, 0.008);
-      mark.lookAt(pt.clone().add(normal));
-      mark.rotateZ(Math.random() * Math.PI);
-      scene.add(mark);
-      chipMarks.push({ mesh: mark, owner: mesh });
     } else {
       // Break open completely -> real hole in wall / shattered furniture piece!
       sfx.crumble();
@@ -486,7 +489,6 @@ APP.createBlasterSystem = function(scene, camera, arch) {
       mesh.visible = false;
       const bi = bounceMeshes.indexOf(mesh);
       if (bi >= 0) bounceMeshes.splice(bi, 1);
-      removeChipMarksFor(mesh);
     }
   }
 
@@ -511,7 +513,6 @@ APP.createBlasterSystem = function(scene, camera, arch) {
       mesh.visible = true;
       if (bounceMeshes.indexOf(mesh) < 0) bounceMeshes.push(mesh);
     }
-    while (chipMarks.length) scene.remove(chipMarks.pop().mesh);
     while (debris.length) scene.remove(debris.pop().mesh);
   }
 
@@ -674,6 +675,17 @@ APP.createBlasterSystem = function(scene, camera, arch) {
       flashMat.opacity = 0;
     }
 
+    if (kickAnimT > 0) {
+      kickAnimT = Math.max(0, kickAnimT - dt);
+      const p = 1 - kickAnimT / 0.34;
+      const thrust = Math.sin(p * Math.PI);
+      kickRoot.visible = kickAnimT > 0;
+      kickRoot.position.set(-0.12 + thrust * 0.08, -0.38 + thrust * 0.25, -0.05 - thrust * 0.42);
+      kickRoot.rotation.set(thrust * 0.38, -thrust * 0.12, 0);
+    } else if (kickRoot.visible) {
+      kickRoot.visible = false;
+    }
+
     // Update Nerf darts: straight flight -> bounce off object/zombie -> fall & settle onto floor
     for (let i = darts.length - 1; i >= 0; i--) {
       const d = darts[i];
@@ -804,7 +816,7 @@ APP.createBlasterSystem = function(scene, camera, arch) {
       if (hitPt || g.fuse <= 0) {
         const boomPt = hitPt || next;
         sfx.explode();
-        damageDestructiblesInRadius(boomPt, 2.5, 4);
+        damageDestructiblesInRadius(boomPt, 0.78, 1);
         if (zombiesApi && zombiesApi.explodeAt) zombiesApi.explodeAt(boomPt);
         scene.remove(g.mesh);
         grenades.splice(i, 1);
@@ -874,5 +886,5 @@ APP.createBlasterSystem = function(scene, camera, arch) {
     return true;
   }
 
-  return { state, sfx, setVisible, resetAmmo, resetWorldDamage, addAmmo, startReload, fire, fireGrenade, update };
+  return { state, sfx, setVisible, resetAmmo, resetWorldDamage, addAmmo, startReload, fire, fireGrenade, triggerKickAnim, update };
 };

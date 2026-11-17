@@ -83,14 +83,14 @@ window.APP = window.APP || {};
     return l;
   }
   addPoint(5.9, 2.15, 4.9, 0xfff3de, 0.24, 1.35, 9.0);  // Living room
-  addPoint(4.58, 1.32, 0.44, 0xffeacc, 0.16, 1.15, 5.5); // Dining pendant
+  addPoint(4.48, 1.32, 0.38, 0xffeacc, 0.16, 1.15, 5.5); // Dining pendant
   addPoint(1.65, 2.20, 1.35, 0xfff4e0, 0.24, 1.25, 6.0); // Kitchen
   addPoint(3.92, 2.25, 8.20, 0xffe8c8, 0.20, 1.05, 5.5); // Entre
   addPoint(1.60, 2.18, 7.15, 0xf6f9ff, 0.20, 1.15, 5.0); // Bad
   addPoint(1.75, 2.18, 4.35, 0xffe6c8, 0.20, 1.05, 5.5); // Master Bed
   addPoint(1.55, 2.18, 9.25, 0xffe8cc, 0.20, 1.00, 5.0); // SW Bed
   addPoint(6.15, 2.18, 7.80, 0xffe8cc, 0.20, 1.00, 5.0); // East Bed
-  addPoint(4.85, 0.70, 5.66, 0xffb86c, 0.20, 0.90, 3.2); // Globe table lamp
+  addPoint(6.15, 2.20, 4.65, 0xfff4de, 0.16, 0.85, 5.5); // Living ceiling track light
 
   function setLightMood(mode) {
     curLightMood = mode;
@@ -133,11 +133,11 @@ window.APP = window.APP || {};
 
   // ==================== ROOM PRESETS (EXACT PROSPECTUS ANGLES) ====================
   const PRESETS = [
-    { id: 'living1', label: 'Stue (Sofa)', pos: [7.45, 1.46, 3.72], look: [5.10, 1.22, 6.20] },
-    { id: 'living2', label: 'Stue (mot Kjøkken)', pos: [6.88, 1.44, 5.10], look: [2.40, 1.24, 3.20] },
-    { id: 'living3', label: 'Stue (TV & Vindu)', pos: [3.85, 1.44, 5.82], look: [6.55, 1.22, 2.25] },
-    { id: 'kitchen', label: 'Kjøkken (JKE)', pos: [3.85, 1.44, 1.88], look: [1.05, 1.14, 0.85] },
-    { id: 'dining', label: 'Spiseplass', pos: [4.05, 1.42, 2.10], look: [4.65, 1.12, 0.10] },
+    { id: 'living1', label: 'Stue (Sofa & TV)', pos: [4.62, 1.46, 2.25], look: [6.15, 1.12, 6.10] },
+    { id: 'living2', label: 'Stue (Bokhylle & Sofa)', pos: [5.25, 1.46, 5.55], look: [6.80, 1.12, 3.05] },
+    { id: 'living3', label: 'Stue (mot Kjøkken)', pos: [6.30, 1.44, 5.35], look: [2.20, 1.18, 1.95] },
+    { id: 'kitchen', label: 'Kjøkken', pos: [3.85, 1.44, 1.88], look: [1.05, 1.14, 0.85] },
+    { id: 'dining', label: 'Spiseplass', pos: [3.75, 1.42, 1.98], look: [4.80, 1.08, 0.25] },
     { id: 'entre', label: 'Entre / Gang', pos: [3.92, 1.46, 9.75], look: [3.92, 1.32, 3.00] },
     { id: 'bad', label: 'Bad (5,5 m²)', pos: [2.85, 1.42, 7.58], look: [0.85, 1.12, 6.60] },
     { id: 'sov1', label: 'Soverom 1 (10,5 m²)', pos: [2.78, 1.40, 5.45], look: [1.35, 1.08, 3.40] },
@@ -510,16 +510,16 @@ window.APP = window.APP || {};
 
   // ==================== ROOM DETECTOR & MINIMAP ====================
   function detectRoom(x, z) {
-    if (isOnLawn(x, z)) return 'Plen / Hage foran huset';
-    if (x > 8.05 || (x > 5.85 && z < 2.85 && z > -0.75 && x + (z - 1.2) > 7.1)) return 'Terrasse (21 m²)';
-    if (x < 3.16 && z >= 2.66 && z <= 6.18) return 'Soverom 1 (10,5 m²)';
-    if (x < 3.16 && z > 6.18 && z <= 8.10) return 'Bad (5,5 m²)';
-    if (x < 3.16 && z > 8.10) return 'Soverom 2 (6,5 m² SV)';
-    if (x >= 4.69 && z >= 6.58 && z <= 9.00) return 'Soverom 3 (6,5 m² Ø)';
-    if (x >= 5.26 && z > 9.00) return 'Innvendig bod (3 m²)';
-    if (x >= 3.16 && x <= 4.69 && z >= 6.58) return 'Entre / Gang (6 m²)';
-    if (x < 3.22 && z < 2.66) return 'Kjøkken (JKE Design)';
-    return 'Stue og kjøkken (35,5 m²)';
+    if (isOnLawn(x, z)) return 'Plen';
+    if (x > 8.05 || (x > 5.85 && z < 2.85 && z > -0.75 && x + (z - 1.2) > 7.1)) return 'Terrasse';
+    if (x < 3.16 && z >= 2.66 && z <= 6.18) return 'Soverom';
+    if (x < 3.16 && z > 6.18 && z <= 8.10) return 'Bad';
+    if (x < 3.16 && z > 8.10) return 'Soverom';
+    if (x >= 4.69 && z >= 6.58 && z <= 9.00) return 'Soverom';
+    if (x >= 5.26 && z > 9.00) return 'Bod';
+    if (x >= 3.16 && x <= 4.69 && z >= 6.58) return 'Entre';
+    if (x < 3.22 && z < 2.66) return 'Kjøkken';
+    return 'Stue';
   }
 
   const mm = document.getElementById('minimap');
@@ -731,6 +731,7 @@ window.APP = window.APP || {};
   const hwHud = document.getElementById('hw-hud');
   const hwTimerEl = document.getElementById('hw-timer');
   const hwBigBanner = document.getElementById('hw-big-banner');
+  const hwBigSub = document.getElementById('hw-big-sub');
   const hwBigSec = document.getElementById('hw-big-sec');
   const hwBigFill = document.getElementById('hw-big-fill');
   const hpFill = document.getElementById('hp-fill');
@@ -859,7 +860,11 @@ window.APP = window.APP || {};
       chips.push(`<div class="skill-chip ${cd <= 0 ? 'ready' : 'cooling'}">${iconImg('spark')}<strong>[Q] Spark (${t.spark * 2}m)</strong><span>${cd <= 0 ? 'Klar' : cd.toFixed(1) + 's'}</span></div>`);
     }
     if (t.armor > 0) {
-      chips.push(`<div class="skill-chip ready">${iconImg('armor')}<strong>Tykke klær</strong><span>50% skade</span></div>`);
+      chips.push(`<div class="skill-chip ready">${iconImg('armor')}<strong>Tykke klær</strong><span>30% mindre skade</span></div>`);
+    }
+    if (t.iq > 0) {
+      const hwSec = Math.max(0.05, 3 - t.iq);
+      chips.push(`<div class="skill-chip ready">${iconImg('iq')}<strong>Høyere IQ (${t.iq})</strong><span>${hwSec <= 0.1 ? 'Øyeblikkelig' : hwSec + 's lekser'}</span></div>`);
     }
     if (t.taurus > 0) {
       chips.push(`<div class="skill-chip ready">${iconImg('taurus')}<strong>Taurus</strong><span>Skade ${t.taurus}</span></div>`);
@@ -871,12 +876,18 @@ window.APP = window.APP || {};
       const st = act > 0 ? `Aktiv ${act.toFixed(1)}s` : (icd <= 0 ? 'Klar' : `${Math.ceil(icd)}s`);
       chips.push(`<div class="skill-chip ${cls}">${iconImg('isa')}<strong>[C] Isa</strong><span>${st}</span></div>`);
     }
+    if (t.pack > 0) {
+      chips.push(`<div class="skill-chip ready">${iconImg('pack')}<strong>Lojal flokk (${t.pack})</strong><span>+${t.pack * 3} HP/kill</span></div>`);
+    }
     if (t.grenade > 0) {
       const gcd = gState.grenadeCooldown;
       chips.push(`<div class="skill-chip ${gcd <= 0 ? 'ready' : 'cooling'}">${iconImg('grenade')}<strong>[G / H.klikk] Granat</strong><span>${gcd <= 0 ? 'Klar' : Math.ceil(gcd) + 's'}</span></div>`);
     }
     if (t.pierce > 0) {
       chips.push(`<div class="skill-chip ready">${iconImg('pierce')}<strong>Gjennomskudd</strong><span>Aktiv</span></div>`);
+    }
+    if (t.frost > 0) {
+      chips.push(`<div class="skill-chip ready">${iconImg('frost')}<strong>Frostkuler (${t.frost})</strong><span>-${t.frost * 20}% fart</span></div>`);
     }
     skillsHud.innerHTML = chips.join('');
     skillsHud.classList.toggle('has-skills', chips.length > 0);
@@ -976,7 +987,8 @@ window.APP = window.APP || {};
       const nsPrompt = (zombies.game.active && !zombies.game.gameOver && zombies.getNoodleState) ? zombies.getNoodleState() : null;
       const nearNoodles = !nearHw && nsPrompt && nsPrompt.active && Math.hypot(player.pos.x - nsPrompt.x, player.pos.z - nsPrompt.z) < 2.30;
       if (nearHw) {
-        promptEl.textContent = `Lekser på spisebordet — Hold E (${hsPrompt.progress.toFixed(1)} / 3.0s) • ${Math.ceil(hsPrompt.timeLeft)}s igjen`;
+        const needTxt = hsPrompt.needHold <= 0.1 ? 'Trykk E' : `Hold E (${hsPrompt.progress.toFixed(1)} / ${hsPrompt.needHold.toFixed(1)}s)`;
+        promptEl.textContent = `Lekser på spisebordet — ${needTxt} • ${Math.ceil(hsPrompt.timeLeft)}s igjen`;
         promptEl.classList.add('show');
         if (hwProgressWrap && hwProgressFill) {
           hwProgressWrap.classList.add('show');
@@ -991,7 +1003,7 @@ window.APP = window.APP || {};
           promptEl.classList.remove('show');
         }
       }
-      roomInd.textContent = detectRoom(player.pos.x, player.pos.z);
+      if (roomInd) roomInd.textContent = detectRoom(player.pos.x, player.pos.z);
 
       // Update X-Shot Insanity blaster & Minecraft zombie horde
       if (zombies.game.active) {
@@ -1006,7 +1018,7 @@ window.APP = window.APP || {};
       camera.position.set(cx, cy, cz);
       camera.lookAt(orbit.target);
       promptEl.classList.remove('show');
-      roomInd.textContent = '3D Dukkehus-oversikt (Dra for å rotere, scroll for å zoome)';
+      if (roomInd) roomInd.textContent = '3D Dukkehus-oversikt (Dra for å rotere, scroll for å zoome)';
     }
 
     // Sync Zombie & Blaster HUD
@@ -1043,6 +1055,11 @@ window.APP = window.APP || {};
           hwBigSec.style.color = color;
           hwBigFill.style.width = `${pct}%`;
           hwBigFill.style.background = color;
+          if (hwBigSub) {
+            hwBigSub.textContent = hsBig.needHold <= 0.1
+              ? 'Spisebordet — Trykk E (øyeblikkelig!)'
+              : `Spisebordet — Hold E i ${hsBig.needHold}s`;
+          }
         }
       }
       waveText.textContent = gState.wave;

@@ -25,6 +25,19 @@ art_files = {
     "master_blue": "art_master_blue.jpg",
     "master_bw": "art_master_bw.jpg",
     "east_blush": "art_east_blush.jpg",
+    "kid_girl": "art_kid_girl.jpg",
+    "kid_boy": "art_kid_boy.jpg",
+    "coastal": "art_coastal.jpg",
+    "hoop": "art_hoop.jpg",
+    "diploma": "art_diploma.jpg",
+    "sketch": "art_sketch.jpg",
+    "mountain": "art_mountain.jpg",
+    "botanical_tall": "art_botanical_tall.jpg",
+    "kitchen_mini": "art_kitchen_mini.jpg",
+    "calendar": "art_calendar.jpg",
+    "botan_blue": "art_botan_blue.jpg",
+    "botan_yellow": "art_botan_yellow.jpg",
+    "norgeskart": "art_norgeskart.jpg",
 }
 
 art_data = {}
@@ -37,7 +50,7 @@ for k, fn in art_files.items():
 
 talent_icons = {}
 ICON_DIR = os.path.join(BASE, "talent_icons")
-for k in ("spark", "armor", "taurus", "isa", "grenade", "pierce"):
+for k in ("spark", "armor", "iq", "taurus", "isa", "pack", "grenade", "pierce", "frost"):
     p = os.path.join(ICON_DIR, f"{k}.jpg")
     if os.path.exists(p):
         with open(p, "rb") as f:

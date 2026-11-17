@@ -9,6 +9,7 @@ APP.buildArchitecture = function(scene, mats) {
   const ceilingGroup = new THREE.Group();
   const colliders = [];     // Static AABB / segment colliders: { x1, z1, x2, z2, r }
   const doors = [];         // Interactive doors: { pivot, mesh, openAngle, closedAngle, isOpen, type, slideVec, colliderIdx, label }
+  const blindSlats = [];    // Individual vertical blind slats zombies can smash through
   const exteriorWallRefs = [];
 
   // Helper: add wall collision box (axis-aligned or angled capsule-line)
@@ -100,6 +101,43 @@ APP.buildArchitecture = function(scene, mats) {
       blind.position.set(0, by, (opts.inSign || 1) * 0.02);
       blind.castShadow = true;
       g.add(blind);
+    }
+
+    // White vertical blinds (lamellgardiner) spanning full height & just past sill
+    if (opts.verticalBlinds) {
+      const sgn = opts.inSign || 1;
+      const trackW = len + 0.06;
+      const track = new THREE.Mesh(new THREE.BoxGeometry(trackW, 0.032, 0.048), mats.trimWhite);
+      track.position.set(0, y1 + 0.02, sgn * (t / 2 + 0.035));
+      track.userData.noDestroy = true;
+      g.add(track);
+      const slatTop = y1 + 0.005;
+      const slatBot = Math.max(0.66, y0 - 0.16);
+      const slatH = slatTop - slatBot;
+      const isOpenBlinds = opts.verticalBlinds === 'open';
+      const slatW = isOpenBlinds ? 0.095 : 0.105;
+      const count = Math.max(4, Math.floor((trackW - 0.04) / 0.076));
+      const step = (trackW - 0.06) / Math.max(1, count - 1);
+      const slatAngle = isOpenBlinds ? 0.92 : 0.14;
+      const slatMat = mats.ceramicWhite;
+      const cosR = Math.cos(rotY), sinR = Math.sin(rotY);
+      const sz = sgn * (t / 2 + 0.042);
+      for (let i = 0; i < count; i++) {
+        const sx = -trackW / 2 + 0.03 + i * step;
+        const slat = new THREE.Mesh(new THREE.BoxGeometry(slatW, slatH, 0.004), slatMat);
+        slat.position.set(sx, slatBot + slatH / 2, sz);
+        slat.rotation.y = slatAngle;
+        slat.castShadow = true;
+        slat.receiveShadow = true;
+        slat.userData.noDestroy = true;
+        g.add(slat);
+        blindSlats.push({
+          mesh: slat,
+          wx: cx + cosR * sx + sinR * sz,
+          wz: cz - sinR * sx + cosR * sz,
+          broken: false
+        });
+      }
     }
 
     archGroup.add(g);
@@ -375,7 +413,7 @@ APP.buildArchitecture = function(scene, mats) {
     x1: 5.90, z1: -0.70, x2: 5.90, z2: 1.24, t: 0.20,
     matPos: mats.sandWall, matNeg: mats.sidingBeige, baseNeg: false, isExterior: true,
     openings: [
-      { type: 'door', doorKind: 'terrace', s0: 0.56, s1: 1.44, y0: 0.0, y1: 2.12, hingeSide: 1, swingSign: -1, openDeg: 75, startOpen: false, label: 'Terrassedør' }
+      { type: 'door', doorKind: 'terrace', s0: 0.56, s1: 1.44, y0: 0.0, y1: 2.12, hingeSide: 1, swingSign: -1, openDeg: 75, startOpen: true, label: 'Terrassedør' }
     ]
   });
 
@@ -396,15 +434,15 @@ APP.buildArchitecture = function(scene, mats) {
     x1: 8.13, z1: 2.72, x2: 8.13, z2: 6.62, t: 0.20,
     matPos: mats.sandWall, matNeg: mats.sidingBeige, baseNeg: false, isExterior: true,
     openings: [
-      { type: 'window', s0: 0.44, s1: 1.14, y0: 0.88, y1: 2.12, inSign: 1, transomY: 0.45 },
-      { type: 'window', s0: 1.48, s1: 3.55, y0: 0.88, y1: 2.12, inSign: 1, splitX: 0.31, transomY: 0.45, transomLeftOnly: true }
+      { type: 'window', s0: 0.44, s1: 1.14, y0: 0.88, y1: 2.12, inSign: 1, transomY: 0.45, verticalBlinds: 'open' },
+      { type: 'window', s0: 1.48, s1: 3.55, y0: 0.88, y1: 2.12, inSign: 1, splitX: 0.31, transomY: 0.45, transomLeftOnly: true, verticalBlinds: 'closed' }
     ]
   });
 
-  // 8. Step back from Living Room (8.03) to East Bedroom (7.55) at Z = 6.62 -> +Z is Exterior, -Z is Living
+  // 8. Step back from Living Room (8.03) to East Bedroom (7.55) at Z = 6.62 -> +Z is Exterior, -Z is Living (kalkmaling)
   addWall({
-    x1: 7.55, z1: 6.62, x2: 8.23, z2: 6.62, t: 0.20,
-    matPos: mats.sidingWhite, matNeg: mats.sandWall, basePos: false, isExterior: true
+    x1: 7.65, z1: 6.62, x2: 8.23, z2: 6.62, t: 0.20,
+    matPos: mats.sidingWhite, matNeg: mats.kalkWall, basePos: false, isExterior: true
   });
 
   // 9. East Bedroom + Bod Outer Wall (X = 7.65, Z = 6.52 .. 10.56) -> +Z_local is West (-X, Room/Bod), -Z_local is East (+X, Exterior)
@@ -421,7 +459,7 @@ APP.buildArchitecture = function(scene, mats) {
     x1: -0.20, z1: 10.46, x2: 7.75, z2: 10.46, t: 0.20,
     matPos: mats.sidingWhite, matNeg: mats.panelWall, basePos: false, isExterior: true,
     openings: [
-      { type: 'door', doorKind: 'front', s0: 3.65, s1: 4.58, y0: 0.0, y1: 2.12, hingeSide: -1, swingSign: -1, openDeg: 85, startOpen: false, label: 'Inngangsdør (Smartlås)' }
+      { type: 'door', doorKind: 'front', s0: 3.65, s1: 4.58, y0: 0.0, y1: 2.12, hingeSide: -1, swingSign: -1, openDeg: 85, startOpen: true, label: 'Inngangsdør (Smartlås)' }
     ]
   });
 
@@ -516,10 +554,17 @@ APP.buildArchitecture = function(scene, mats) {
     ]
   });
 
-  // I7. Living / East Bedroom divider (Z = 6.58, X = 4.63 .. 7.60) -> +Z is East Bed (panel), -Z is Living (sand)
+  // I7. Living / East Bedroom divider (Z = 6.58, X = 4.63 .. 7.55) + Hallway lintel (X = 3.16 .. 4.63) -> -Z is Living (kalkmaling)
   addWall({
-    x1: 4.63, z1: 6.58, x2: 7.60, z2: 6.58, t: 0.12,
-    matPos: mats.panelWall, matNeg: mats.sandWall
+    x1: 3.16, z1: 6.58, x2: 4.63, z2: 6.58, t: 0.12,
+    matPos: mats.sandWall, matNeg: mats.kalkWall,
+    openings: [
+      { type: 'opening', s0: 0, s1: 1.47, y0: 0, y1: 2.12 }
+    ]
+  });
+  addWall({
+    x1: 4.63, z1: 6.58, x2: 7.65, z2: 6.58, t: 0.12,
+    matPos: mats.panelWall, matNeg: mats.kalkWall
   });
 
   // I8. Entre / East Bedroom divider (X = 4.69, Z = 6.58 .. 9.00) -> +Z_local is West (Entre sand), -Z_local is East (panel)
@@ -654,22 +699,15 @@ APP.buildArchitecture = function(scene, mats) {
   addCeilingFixture(6.15, 7.80, 'plafond');
   addCeilingFixture(6.40, 9.70, 'plafond');
 
-  // Living Room Ceiling Track Spotlight Bar (4 adjustable cylindrical spots, p13_img0 & p15_img0)
-  const trackBar = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.025, 0.04), mats.trimWhite);
-  trackBar.position.set(6.55, H - 0.015, 4.75);
-  trackBar.rotation.y = 0.28;
-  ceilingGroup.add(trackBar);
-  for (let i = 0; i < 4; i++) {
-    const t = -0.48 + i * 0.32;
-    const spot = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.095, 14), mats.trimWhite);
-    spot.position.set(6.55 + Math.cos(0.28) * t, H - 0.075, 4.75 - Math.sin(0.28) * t);
-    spot.rotation.z = 0.35 * (i % 2 === 0 ? 1 : -1);
-    spot.rotation.x = 0.25;
-    ceilingGroup.add(spot);
-  }
-
   scene.add(archGroup);
   scene.add(ceilingGroup);
 
-  return { archGroup, ceilingGroup, colliders, doors, addBoxCollider };
+  function resetBlinds() {
+    for (const s of blindSlats) {
+      s.broken = false;
+      s.mesh.visible = true;
+    }
+  }
+
+  return { archGroup, ceilingGroup, colliders, doors, blindSlats, resetBlinds, addBoxCollider };
 };

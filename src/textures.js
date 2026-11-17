@@ -157,6 +157,40 @@ APP.createMaterialLibrary = function(renderer) {
     });
   }
 
+  // 3b. Textured limewash (kalkmaling) accent wall for TV wall
+  function makeKalkWallMat(hex) {
+    const S = 512;
+    const c = document.createElement('canvas'); c.width = S; c.height = S;
+    const g = c.getContext('2d');
+    const b = document.createElement('canvas'); b.width = S; b.height = S;
+    const bg = b.getContext('2d');
+    const rand = rng(313);
+    g.fillStyle = hex; g.fillRect(0, 0, S, S);
+    bg.fillStyle = 'rgb(128,128,128)'; bg.fillRect(0, 0, S, S);
+    for (let i = 0; i < 420; i++) {
+      const x = rand() * S, y = rand() * S;
+      const rad = 16 + rand() * 52;
+      const grad = g.createRadialGradient(x, y, 2, x, y, rad);
+      const light = rand() > 0.48;
+      const a = 0.03 + rand() * 0.06;
+      grad.addColorStop(0, light ? `rgba(218,205,168,${a})` : `rgba(82,72,50,${a})`);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = grad;
+      g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill();
+      const bv = light ? 142 : 112;
+      bg.fillStyle = `rgba(${bv},${bv},${bv},0.14)`;
+      bg.beginPath(); bg.arc(x, y, rad * 0.7, 0, Math.PI * 2); bg.fill();
+    }
+    return new THREE.MeshStandardMaterial({
+      map: finalizeTex(c, 1.4, 1.2, true),
+      bumpMap: finalizeTex(b, 1.8, 1.5, false),
+      bumpScale: 0.0035,
+      roughness: 0.94,
+      metalness: 0.0,
+      envMapIntensity: 0.32
+    });
+  }
+
   // 4. Vertical tongue-and-groove panel wall (for both 6.5m2 bedrooms)
   function makePanelWallMat(hex) {
     const W = 512, H = 512;
@@ -356,6 +390,7 @@ APP.createMaterialLibrary = function(renderer) {
     bathWallTile: makeTileMat('#f0f1ee', '#c5c8c4', 2, 4, 2.5, 1.6, 0.32, 0.004),
     showerWall: makeTileMat('#666a6f', '#4e5257', 2, 3, 1.2, 1.4, 0.62, 0.006),
     sandWall: makeWallMat('#c4b798', 0.90),
+    kalkWall: makeKalkWallMat('#b4a582'),
     terracottaWall: makeWallMat('#b38468', 0.90),
     whiteWall: makeWallMat('#f0eee9', 0.88),
     ceiling: new THREE.MeshStandardMaterial({ color: 0xf6f5f0, roughness: 0.94, envMapIntensity: 0.25 }),
