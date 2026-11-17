@@ -17,7 +17,8 @@ window.APP = window.APP || {};
   scene.environment = mats.envMap;
   scene.fog = new THREE.FogExp2(0xcde2f2, 0.0055);
 
-  const camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.08, 320);
+  const S = APP.XZ || 1;
+  const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.08, 320);
   scene.add(camera);
 
   // Sky Dome
@@ -58,16 +59,16 @@ window.APP = window.APP || {};
   scene.add(hemi);
 
   const sunLight = new THREE.DirectionalLight(0xfff4df, 2.25);
-  sunLight.position.set(14, 9.5, 1.5); // Shining from East/North-East/South-East into terrace & living windows
-  sunLight.target.position.set(4.5, 0.5, 4.5);
+  sunLight.position.set(14 * S, 9.5, 1.5 * S); // Shining from East/North-East/South-East into terrace & living windows
+  sunLight.target.position.set(4.5 * S, 0.5, 4.5 * S);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.set(2048, 2048);
   sunLight.shadow.camera.near = 1.0;
-  sunLight.shadow.camera.far = 34;
-  sunLight.shadow.camera.left = -9;
-  sunLight.shadow.camera.right = 9;
-  sunLight.shadow.camera.top = 9;
-  sunLight.shadow.camera.bottom = -9;
+  sunLight.shadow.camera.far = 36;
+  sunLight.shadow.camera.left = -9 * S;
+  sunLight.shadow.camera.right = 9 * S;
+  sunLight.shadow.camera.top = 9 * S;
+  sunLight.shadow.camera.bottom = -9 * S;
   sunLight.shadow.bias = -0.0004;
   sunLight.shadow.normalBias = 0.015;
   scene.add(sunLight, sunLight.target);
@@ -75,8 +76,8 @@ window.APP = window.APP || {};
   // Interior fill & fixture lights
   const interiorLights = [];
   function addPoint(x, y, z, color, intDay, intNight, dist = 7) {
-    const l = new THREE.PointLight(color, intDay, dist, 1.6);
-    l.position.set(x, y, z);
+    const l = new THREE.PointLight(color, intDay, dist * S, 1.6);
+    l.position.set(x * S, y, z * S);
     l.userData = { intDay, intNight };
     scene.add(l);
     interiorLights.push(l);
@@ -133,18 +134,18 @@ window.APP = window.APP || {};
 
   // ==================== ROOM PRESETS (EXACT PROSPECTUS ANGLES) ====================
   const PRESETS = [
-    { id: 'living1', label: 'Stue (Sofa & TV)', pos: [4.62, 1.46, 2.25], look: [6.15, 1.12, 6.10] },
-    { id: 'living2', label: 'Stue (Bokhylle & Sofa)', pos: [5.25, 1.46, 5.55], look: [6.80, 1.12, 3.05] },
-    { id: 'living3', label: 'Stue (mot Kjøkken)', pos: [6.30, 1.44, 5.35], look: [2.20, 1.18, 1.95] },
-    { id: 'kitchen', label: 'Kjøkken', pos: [3.85, 1.44, 1.88], look: [1.05, 1.14, 0.85] },
-    { id: 'dining', label: 'Spiseplass', pos: [3.75, 1.42, 1.98], look: [4.80, 1.08, 0.25] },
-    { id: 'entre', label: 'Entre / Gang', pos: [3.92, 1.46, 9.75], look: [3.92, 1.32, 3.00] },
-    { id: 'bad', label: 'Bad (5,5 m²)', pos: [2.85, 1.42, 7.58], look: [0.85, 1.12, 6.60] },
-    { id: 'sov1', label: 'Soverom 1 (10,5 m²)', pos: [2.78, 1.40, 5.45], look: [1.35, 1.08, 3.40] },
-    { id: 'sov2', label: 'Soverom 2 (6,5 SV)', pos: [2.82, 1.36, 8.65], look: [0.95, 1.05, 9.75] },
-    { id: 'sov3', label: 'Soverom 3 & Bod', pos: [5.02, 1.36, 8.28], look: [6.80, 1.05, 7.45] },
-    { id: 'terrace', label: 'Terrasse (21 m²)', pos: [8.92, 1.48, 1.55], look: [9.15, 1.05, 5.45] },
-    { id: 'garden', label: 'Plen (foran huset)', pos: [12.15, 1.34, 6.80], look: [8.40, 0.92, 4.30] }
+    { id: 'living1', label: 'Stue (Sofa & TV)', pos: [4.62 * S, 1.46, 2.25 * S], look: [6.15 * S, 1.12, 6.10 * S] },
+    { id: 'living2', label: 'Stue (Bokhylle & Sofa)', pos: [5.25 * S, 1.46, 5.55 * S], look: [6.80 * S, 1.12, 3.05 * S] },
+    { id: 'living3', label: 'Stue (mot Kjøkken)', pos: [6.30 * S, 1.44, 5.35 * S], look: [2.20 * S, 1.18, 1.95 * S] },
+    { id: 'kitchen', label: 'Kjøkken', pos: [3.85 * S, 1.44, 1.88 * S], look: [1.05 * S, 1.14, 0.85 * S] },
+    { id: 'dining', label: 'Spiseplass', pos: [3.75 * S, 1.42, 1.98 * S], look: [4.80 * S, 1.08, 0.25 * S] },
+    { id: 'entre', label: 'Entre / Gang', pos: [3.92 * S, 1.46, 9.75 * S], look: [3.92 * S, 1.32, 3.00 * S] },
+    { id: 'bad', label: 'Bad (5,5 m²)', pos: [2.85 * S, 1.42, 7.58 * S], look: [0.85 * S, 1.12, 6.60 * S] },
+    { id: 'sov1', label: 'Soverom 1 (10,5 m²)', pos: [2.78 * S, 1.40, 5.45 * S], look: [1.35 * S, 1.08, 3.40 * S] },
+    { id: 'sov2', label: 'Soverom 2 (6,5 SV)', pos: [2.82 * S, 1.36, 8.65 * S], look: [0.95 * S, 1.05, 9.75 * S] },
+    { id: 'sov3', label: 'Soverom 3 & Bod', pos: [5.02 * S, 1.36, 8.28 * S], look: [6.80 * S, 1.05, 7.45 * S] },
+    { id: 'terrace', label: 'Terrasse (21 m²)', pos: [8.92 * S, 1.48, 1.55 * S], look: [9.15 * S, 1.05, 5.45 * S] },
+    { id: 'garden', label: 'Plen (foran huset)', pos: [12.15 * S, 1.34, 6.80 * S], look: [8.40 * S, 0.92, 4.30 * S] }
   ];
 
   // ==================== CAMERA & WALK STATE ====================
@@ -160,7 +161,7 @@ window.APP = window.APP || {};
   let glide = null; // { fromPos, toPos, fromYaw, toYaw, fromPitch, toPitch, t, dur }
 
   // Orbit state for Dollhouse mode
-  const orbit = { target: new THREE.Vector3(4.5, 0.8, 4.8), yaw: 0.72, pitch: 0.82, dist: 15.5 };
+  const orbit = { target: new THREE.Vector3(4.5 * S, 0.8, 4.8 * S), yaw: 0.72, pitch: 0.82, dist: 15.5 * S };
 
   function lookAtAngles(from, to) {
     const dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2];
@@ -258,6 +259,10 @@ window.APP = window.APP || {};
     }
     if (mode !== 'walk') setMode('walk');
     zombies.resetGame();
+    canvas.focus();
+    if (controlMode === 'mouse') {
+      try { canvas.requestPointerLock(); } catch (_) {}
+    }
   }
   document.getElementById('btn-restart')?.addEventListener('click', handleRestart);
   document.getElementById('btn-gameover-restart').addEventListener('click', handleRestart);
@@ -276,7 +281,7 @@ window.APP = window.APP || {};
     if (e.code === 'Space') {
       e.preventDefault();
       if (mode === 'walk' && !zombies.game.gameOver && !zombies.game.talentOpen && player.grounded) {
-        player.velY = 4.4;
+        player.velY = 5.5;
         player.grounded = false;
         glide = null;
       }
@@ -313,54 +318,87 @@ window.APP = window.APP || {};
   window.addEventListener('keyup', e => { keys[e.code] = false; });
 
   canvas.addEventListener('contextmenu', e => e.preventDefault());
-  let isDragging = false, dragMoved = 0, lastX = 0, lastY = 0;
+  let isDragging = false, mouseDown = false, lastX = 0, lastY = 0;
+  let hoverLastX = null, hoverLastY = null;
+
+  function lockGamePointer() {
+    if (document.activeElement && document.activeElement !== canvas && document.activeElement.blur) {
+      try { document.activeElement.blur(); } catch (_) {}
+    }
+    try { canvas.focus({ preventScroll: true }); } catch (_) {}
+    if (controlMode === 'mouse' && mode === 'walk' && document.pointerLockElement !== canvas) {
+      try { canvas.requestPointerLock(); } catch (_) {}
+    }
+  }
+
+  // Never leave focus stuck on HUD buttons so WASD / Space / shooting never break
+  document.addEventListener('click', e => {
+    const btn = e.target && e.target.closest && e.target.closest('button');
+    if (btn) {
+      try { btn.blur(); } catch (_) {}
+      if (!zombies.game.talentOpen && !zombies.game.gameOver) {
+        try { canvas.focus({ preventScroll: true }); } catch (_) {}
+      }
+    }
+  });
+
   canvas.addEventListener('mousedown', e => {
     if (zombies.game.talentOpen) return;
     if (e.button === 2 && mode === 'walk' && zombies.tryFireGrenade) {
       blaster.sfx.unlock();
+      lockGamePointer();
       zombies.tryFireGrenade();
       return;
     }
     if (e.button !== 0) return;
     blaster.sfx.unlock();
-    if (mode === 'walk' && controlMode === 'nomouse') {
+    if (mode === 'walk') {
+      mouseDown = true;
+      lockGamePointer();
       if (zombies.game.active && !zombies.game.gameOver) {
         blaster.fire(zombies);
       }
       return;
     }
-    if (document.pointerLockElement === canvas && mode === 'walk' && zombies.game.active && !zombies.game.gameOver) {
-      blaster.fire(zombies);
-      return;
-    }
-    isDragging = true; dragMoved = 0; lastX = e.clientX; lastY = e.clientY;
+    isDragging = true; lastX = e.clientX; lastY = e.clientY;
     canvas.classList.add('dragging');
   });
   window.addEventListener('mouseup', e => {
+    if (e.button === 0) mouseDown = false;
     if (!isDragging) return;
     isDragging = false;
     canvas.classList.remove('dragging');
-    // Short click (not drag) -> shoot, plus request pointer lock in walk mode
-    if (dragMoved < 5 && mode === 'walk' && controlMode === 'mouse') {
-      if (zombies.game.active && !zombies.game.gameOver) {
-        blaster.fire(zombies);
-        if (document.pointerLockElement !== canvas) {
-          try { canvas.requestPointerLock(); } catch (_) {}
-        }
-      } else if (document.pointerLockElement !== canvas) {
-        try { canvas.requestPointerLock(); } catch (_) {}
-      }
-    }
+  });
+  window.addEventListener('blur', () => {
+    mouseDown = false;
+    isDragging = false;
+    hoverLastX = null;
+    hoverLastY = null;
+  });
+  canvas.addEventListener('mouseleave', () => {
+    hoverLastX = null;
+    hoverLastY = null;
   });
   window.addEventListener('mousemove', e => {
     if (mode === 'walk' && controlMode === 'nomouse') return;
-    if (document.pointerLockElement === canvas && mode === 'walk') {
-      glide = null;
-      player.yaw -= e.movementX * 0.0022;
-      player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch - e.movementY * 0.0022));
+    if (mode === 'walk' && !zombies.game.talentOpen && !zombies.game.gameOver) {
+      if (document.pointerLockElement === canvas) {
+        glide = null;
+        player.yaw -= e.movementX * 0.0022;
+        player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch - e.movementY * 0.0022));
+      } else if (controlMode === 'mouse' && e.target === canvas) {
+        const dx = (hoverLastX !== null) ? (e.clientX - hoverLastX) : 0;
+        const dy = (hoverLastY !== null) ? (e.clientY - hoverLastY) : 0;
+        hoverLastX = e.clientX;
+        hoverLastY = e.clientY;
+        if (Math.abs(dx) < 90 && Math.abs(dy) < 90 && (dx !== 0 || dy !== 0)) {
+          glide = null;
+          player.yaw -= dx * 0.0032;
+          player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch - dy * 0.0028));
+        }
+      }
     } else if (isDragging) {
       const dx = e.clientX - lastX, dy = e.clientY - lastY;
-      dragMoved += Math.hypot(dx, dy);
       lastX = e.clientX; lastY = e.clientY;
       if (mode === 'walk') {
         glide = null;
@@ -457,6 +495,7 @@ window.APP = window.APP || {};
 
   // ==================== COLLISION RESOLUTION ====================
   function isOnLawn(x, z) {
+    x /= S; z /= S;
     if (x > 10.02) return true;
     if (x > 7.72 && z > 6.68) return true;
     if (z < -0.78 || z > 10.60 || x < -0.15) return true;
@@ -464,10 +503,10 @@ window.APP = window.APP || {};
   }
 
   function resolveCollisions(pos) {
-    const r = 0.21;
+    const r = 0.16;
     // Outer playable perimeter clamp (includes front lawn up to hedge & courtyard)
-    pos.x = Math.max(-1.2, Math.min(12.25, pos.x));
-    pos.z = Math.max(-2.5, Math.min(12.2, pos.z));
+    pos.x = Math.max(-1.2 * S, Math.min(12.25 * S, pos.x));
+    pos.z = Math.max(-2.5 * S, Math.min(12.2 * S, pos.z));
 
     for (let iter = 0; iter < 2; iter++) {
       for (const c of arch.colliders) {
@@ -490,6 +529,7 @@ window.APP = window.APP || {};
             }
           }
         } else if (c.kind === 'box') {
+          if (c.topY !== undefined && (pos.y - 1.46) >= c.topY - 0.14) continue;
           const cx = Math.max(c.minX, Math.min(c.maxX, pos.x));
           const cz = Math.max(c.minZ, Math.min(c.maxZ, pos.z));
           const dx = pos.x - cx, dz = pos.z - cz;
@@ -510,7 +550,8 @@ window.APP = window.APP || {};
 
   // ==================== ROOM DETECTOR & MINIMAP ====================
   function detectRoom(x, z) {
-    if (isOnLawn(x, z)) return 'Plen';
+    x /= S; z /= S;
+    if (isOnLawn(x * S, z * S)) return 'Plen';
     if (x > 8.05 || (x > 5.85 && z < 2.85 && z > -0.75 && x + (z - 1.2) > 7.1)) return 'Terrasse';
     if (x < 3.16 && z >= 2.66 && z <= 6.18) return 'Soverom';
     if (x < 3.16 && z > 6.18 && z <= 8.10) return 'Bad';
@@ -527,12 +568,14 @@ window.APP = window.APP || {};
   // Map world [-0.5..12.6, -1.0..12.0] -> [210 x 245]
   const MM_SCALE = 15.2, MM_OX = 12, MM_OZ = 22;
   function toMM(x, z) { return [MM_OX + x * MM_SCALE, MM_OZ + z * MM_SCALE]; }
-  function fromMM(px, py) { return [(px - MM_OX) / MM_SCALE, (py - MM_OZ) / MM_SCALE]; }
+  function toMMW(wx, wz) { return toMM(wx / S, wz / S); }
+  function fromMM(px, py) { return [((px - MM_OX) / MM_SCALE) * S, ((py - MM_OZ) / MM_SCALE) * S]; }
 
   mm.addEventListener('click', e => {
     const rect = mm.getBoundingClientRect();
     const [wx, wz] = fromMM(e.clientX - rect.left, e.clientY - rect.top);
-    if (wx >= -0.8 && wx <= 12.1 && wz >= -1.8 && wz <= 11.8) {
+    const ux = wx / S, uz = wz / S;
+    if (ux >= -0.8 && ux <= 12.1 && uz >= -1.8 && uz <= 11.8) {
       if (mode === 'dollhouse') setMode('walk');
       const eyeY = isOnLawn(wx, wz) ? 1.30 : 1.46;
       glide = {
@@ -631,7 +674,7 @@ window.APP = window.APP || {};
     for (const [txt, lx, lz] of labels) mctx.fillText(txt, ...toMM(lx, lz));
 
     // Player cone & dot
-    const [px, py] = toMM(player.pos.x, player.pos.z);
+    const [px, py] = toMMW(player.pos.x, player.pos.z);
     const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
     const ang = Math.atan2(fz, fx);
     mctx.fillStyle = 'rgba(232, 207, 160, 0.35)';
@@ -650,7 +693,7 @@ window.APP = window.APP || {};
     if (zombies.game.active) {
       for (const zd of zombies.getMinimapDots()) {
         if (zd.dying) continue;
-        const [zx, zy] = toMM(zd.x, zd.z);
+        const [zx, zy] = toMMW(zd.x, zd.z);
         mctx.fillStyle = '#5bd948';
         mctx.strokeStyle = '#ff2e2e';
         mctx.lineWidth = 1.3;
@@ -662,7 +705,7 @@ window.APP = window.APP || {};
       if (zombies.getCatDot) {
         const cd = zombies.getCatDot();
         if (cd) {
-          const [cx, cy] = toMM(cd.x, cd.z);
+          const [cx, cy] = toMMW(cd.x, cd.z);
           mctx.fillStyle = '#050608';
           mctx.strokeStyle = cd.hunting ? '#ff9f1a' : '#7cff4d';
           mctx.lineWidth = 1.5;
@@ -675,7 +718,7 @@ window.APP = window.APP || {};
       if (zombies.getIsaDot) {
         const idot = zombies.getIsaDot();
         if (idot) {
-          const [ix, iy] = toMM(idot.x, idot.z);
+          const [ix, iy] = toMMW(idot.x, idot.z);
           mctx.fillStyle = '#ffffff';
           mctx.strokeStyle = '#ff3b30';
           mctx.lineWidth = 1.6;
@@ -688,7 +731,7 @@ window.APP = window.APP || {};
       if (zombies.getNoodleState) {
         const ns = zombies.getNoodleState();
         if (ns.active) {
-          const [nx, ny] = toMM(ns.x, ns.z);
+          const [nx, ny] = toMMW(ns.x, ns.z);
           mctx.fillStyle = '#ffbe2e';
           mctx.strokeStyle = '#ffffff';
           mctx.lineWidth = 1.0;
@@ -699,7 +742,7 @@ window.APP = window.APP || {};
       if (zombies.getHomeworkState) {
         const hs = zombies.getHomeworkState();
         if (hs.active) {
-          const [hx, hy] = toMM(hs.x, hs.z);
+          const [hx, hy] = toMMW(hs.x, hs.z);
           mctx.fillStyle = '#59c8ff';
           mctx.strokeStyle = '#ffffff';
           mctx.lineWidth = 1.2;
@@ -710,7 +753,7 @@ window.APP = window.APP || {};
       if (zombies.getAmmoStates) {
         for (const am of zombies.getAmmoStates()) {
           if (!am.active) continue;
-          const [ax, ay] = toMM(am.x, am.z);
+          const [ax, ay] = toMMW(am.x, am.z);
           mctx.fillStyle = '#176fd6';
           mctx.strokeStyle = '#ff621a';
           mctx.lineWidth = 1.4;
@@ -736,8 +779,6 @@ window.APP = window.APP || {};
   const hwBigFill = document.getElementById('hw-big-fill');
   const hpFill = document.getElementById('hp-fill');
   const hpText = document.getElementById('hp-text');
-  const hungerFill = document.getElementById('hunger-fill');
-  const hungerText = document.getElementById('hunger-text');
   const waveText = document.getElementById('wave-text');
   const zleftText = document.getElementById('zleft-text');
   const scoreText = document.getElementById('score-text');
@@ -757,7 +798,7 @@ window.APP = window.APP || {};
 
   function renderTalentTree() {
     if (!talentGrid || !zombies.TALENT_COLS || !zombies.TALENT_NODES) return;
-    if (talentTitle) talentTitle.textContent = `Velg ferdighet — Bølge ${zombies.game.wave}`;
+    if (talentTitle) talentTitle.textContent = `Velg ferdighet — Nivå ${zombies.game.level || 1}`;
     talentGrid.innerHTML = '';
     for (const col of zombies.TALENT_COLS) {
       const colEl = document.createElement('div');
@@ -830,6 +871,9 @@ window.APP = window.APP || {};
             if (zombies.chooseTalent(node.id)) {
               talentOverlay?.classList.remove('show');
               lastTalentOpenState = false;
+              hoverLastX = null;
+              hoverLastY = null;
+              lockGamePointer();
             }
           });
         } else {
@@ -843,8 +887,13 @@ window.APP = window.APP || {};
       const skipBtn = document.createElement('button');
       skipBtn.type = 'button';
       skipBtn.className = 'room-btn active';
-      skipBtn.textContent = `Start bølge ${zombies.game.wave}`;
-      skipBtn.addEventListener('click', () => { zombies.skipTalentIfFull(); });
+      skipBtn.textContent = 'Fortsett spill';
+      skipBtn.addEventListener('click', () => {
+        zombies.skipTalentIfFull();
+        hoverLastX = null;
+        hoverLastY = null;
+        lockGamePointer();
+      });
       talentGrid.appendChild(skipBtn);
     }
   }
@@ -867,7 +916,8 @@ window.APP = window.APP || {};
       chips.push(`<div class="skill-chip ready">${iconImg('iq')}<strong>Høyere IQ (${t.iq})</strong><span>${hwSec <= 0.1 ? 'Øyeblikkelig' : hwSec + 's lekser'}</span></div>`);
     }
     if (t.taurus > 0) {
-      chips.push(`<div class="skill-chip ready">${iconImg('taurus')}<strong>Taurus</strong><span>Skade ${t.taurus}</span></div>`);
+      const tDmg = +(t.taurus * 0.5).toFixed(1);
+      chips.push(`<div class="skill-chip ready">${iconImg('taurus')}<strong>Taurus</strong><span>Skade ${tDmg}</span></div>`);
     }
     if (t.isa > 0) {
       const act = gState.isaActiveT;
@@ -886,8 +936,9 @@ window.APP = window.APP || {};
     if (t.pierce > 0) {
       chips.push(`<div class="skill-chip ready">${iconImg('pierce')}<strong>Gjennomskudd</strong><span>Aktiv</span></div>`);
     }
-    if (t.frost > 0) {
-      chips.push(`<div class="skill-chip ready">${iconImg('frost')}<strong>Frostkuler (${t.frost})</strong><span>-${t.frost * 20}% fart</span></div>`);
+    if (t.fire > 0) {
+      const dmg = Math.min(5, 1 + t.fire);
+      chips.push(`<div class="skill-chip ready">${iconImg('fire')}<strong>Ildkuler (${t.fire})</strong><span>${dmg} skade/skudd</span></div>`);
     }
     skillsHud.innerHTML = chips.join('');
     skillsHud.classList.toggle('has-skills', chips.length > 0);
@@ -950,7 +1001,7 @@ window.APP = window.APP || {};
         glide = null;
         const len = Math.hypot(fwd, str);
         fwd /= len; str /= len;
-        const speed = (keys['ShiftLeft'] || keys['ShiftRight']) ? 3.8 : 2.15;
+        const speed = (keys['ShiftLeft'] || keys['ShiftRight']) ? 3.8 : 2.25;
         const sinY = Math.sin(player.yaw), cosY = Math.cos(player.yaw);
         // Forward = (-sinY, -cosY), Right = (cosY, -sinY)
         const mx = (-sinY * fwd + cosY * str) * speed * dt;
@@ -961,8 +1012,18 @@ window.APP = window.APP || {};
         player.bobPhase += dt * speed * 4.2;
       }
 
-      // Vertical jump & gravity physics + smooth lawn/floor step height
-      const groundEyeY = isOnLawn(player.pos.x, player.pos.z) ? 1.30 : 1.46;
+      // Vertical jump & gravity physics + smooth lawn/floor/tabletop surface height
+      let floorSurfaceY = isOnLawn(player.pos.x, player.pos.z) ? -0.16 : 0;
+      const feetY = player.pos.y - 1.46;
+      for (const c of arch.colliders) {
+        if (!c.enabled || c.kind !== 'box' || c.topY === undefined) continue;
+        if (feetY >= c.topY - 0.16 &&
+            player.pos.x >= c.minX - 0.10 && player.pos.x <= c.maxX + 0.10 &&
+            player.pos.z >= c.minZ - 0.10 && player.pos.z <= c.maxZ + 0.10) {
+          floorSurfaceY = Math.max(floorSurfaceY, c.topY);
+        }
+      }
+      const groundEyeY = floorSurfaceY + 1.46;
       if (!player.grounded || player.pos.y > groundEyeY + 0.005 || player.velY > 0) {
         player.velY -= 14.2 * dt;
         player.pos.y += player.velY * dt;
@@ -981,6 +1042,10 @@ window.APP = window.APP || {};
       euler.set(player.pitch, player.yaw, 0, 'YXZ');
       camera.quaternion.setFromEuler(euler);
 
+      if (mouseDown && controlMode === 'mouse' && zombies.game.active && !zombies.game.gameOver && !zombies.game.talentOpen) {
+        blaster.fire(zombies);
+      }
+
       // Homework / Noodle interaction prompt
       const hsPrompt = (zombies.game.active && !zombies.game.gameOver && zombies.getHomeworkState) ? zombies.getHomeworkState() : null;
       const nearHw = hsPrompt && hsPrompt.active && Math.hypot(player.pos.x - hsPrompt.x, player.pos.z - hsPrompt.z) < 2.15;
@@ -997,7 +1062,7 @@ window.APP = window.APP || {};
       } else {
         if (hwProgressWrap) hwProgressWrap.classList.remove('show');
         if (nearNoodles) {
-          promptEl.textContent = 'Varme nudler — Trykk E for å spise';
+          promptEl.textContent = 'Varme nudler (+35 HP) — Trykk E for å spise';
           promptEl.classList.add('show');
         } else {
           promptEl.classList.remove('show');
@@ -1029,11 +1094,6 @@ window.APP = window.APP || {};
       hpFill.style.width = `${hpPct}%`;
       hpFill.style.background = hpPct > 50 ? '#4cd964' : (hpPct > 25 ? '#ff9f0a' : '#ff3b30');
       hpText.textContent = Math.ceil(gState.hp);
-      if (hungerFill && hungerText) {
-        hungerFill.style.width = `${gState.hunger}%`;
-        hungerFill.style.background = gState.hunger > 50 ? '#ffbe2e' : (gState.hunger > 25 ? '#ff7b29' : '#ff3b30');
-        hungerText.textContent = `${Math.ceil(gState.hunger)}%`;
-      }
       if (hwHud && hwHudSep && hwTimerEl && zombies.getHomeworkState) {
         const hsHud = zombies.getHomeworkState();
         hwHud.style.display = hsHud.active ? 'flex' : 'none';

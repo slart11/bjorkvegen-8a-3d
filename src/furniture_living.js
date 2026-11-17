@@ -231,7 +231,7 @@ APP.furnishLivingAndKitchen = function(scene, mats, arch) {
   cooktop.position.set(1.59, 0.905, 0.31);
   g.add(ovenFace, ovenGlass, ovenHandle, cooktop);
 
-  // Cylindrical Brushed Stainless Range Hood (X=1.59, Z=0.30) with tiny spice rack to its left
+  // Cylindrical Brushed Stainless Range Hood (X=1.59, Z=0.30)
   const hood = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.84, 24), mats.steel);
   hood.position.set(1.59, 2.00, 0.30);
   hood.castShadow = true;
@@ -278,7 +278,7 @@ APP.furnishLivingAndKitchen = function(scene, mats, arch) {
     g.add(plaf);
   }
 
-  // Kitchen South Wall (Z = 2.60 facing North -Z) — overhead white cabinets, Norway map, 2 botanical prints, calendar & spice rack (Photo 5!)
+  // Kitchen South Wall (Z = 2.60 facing North -Z) — overhead white cabinets, Norway map, 2 botanical prints, calendar & spice rack
   const kUpSouth = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.50, 0.36), mats.kitchenGloss);
   kUpSouth.position.set(1.86, 2.15, 2.42);
   kUpSouth.castShadow = true; kUpSouth.receiveShadow = true;
@@ -321,7 +321,7 @@ APP.furnishLivingAndKitchen = function(scene, mats, arch) {
       g.add(leg);
     }
   }
-  arch.addBoxCollider(dTableX, dTableZ, dtW, dtD);
+  arch.addBoxCollider(dTableX, dTableZ, dtW, dtD, 0.742);
 
   // Dining tabletop items (paper towel roll, black tray, sauce bottles, pouch)
   const pTowel = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.22, 14), mats.ceramicWhite);
@@ -382,8 +382,8 @@ APP.furnishLivingAndKitchen = function(scene, mats, arch) {
   addWhiteSlattedChair(dTableX - 0.76, dTableZ + 0.04, Math.PI * 0.48, false); // West head of table
   addWhiteSlattedChair(dTableX - 0.30, dTableZ - 0.52, 0.0, false);              // North window left
   addWhiteSlattedChair(dTableX + 0.34, dTableZ - 0.52, 0.0, false);              // North window right
-  addWhiteSlattedChair(5.42, 0.86, -Math.PI * 0.58, false);                      // East corner chair (clean seat)
-  arch.addBoxCollider(5.42, 0.86, 0.46, 0.46);
+  addWhiteSlattedChair(dTableX, dTableZ + 0.52, Math.PI, false);                 // South side of table (clear of terrace door)
+  arch.addBoxCollider(dTableX, dTableZ + 0.52, 0.44, 0.40, 0.48);
 
   // Matte taupe dome pendant lamp centered over dining table
   const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.88, 6), mats.ceramicWhite);
@@ -628,9 +628,9 @@ APP.furnishLivingAndKitchen = function(scene, mats, arch) {
   arch.addBoxCollider(6.45, 3.63, 2.74, 0.94);
   arch.addBoxCollider(7.42, 4.50, 0.88, 0.88);
 
-  // Slatted Light Oak Oval-End Coffee Table (6.18, 4.62) (Photo 2 & Photo 3)
+  // Slatted Light Oak Oval-End Coffee Table (6.18, 4.74) — extra walkway room from sofa
   const ctGroup = new THREE.Group();
-  ctGroup.position.set(6.18, 0, 4.62);
+  ctGroup.position.set(6.18, 0, 4.74);
   const ctTop = new THREE.Mesh(APP.makeRoundedBox(1.04, 0.026, 0.54, 0.14, 4), mats.oakFurniture);
   ctTop.position.y = 0.405; ctTop.castShadow = true; ctTop.receiveShadow = true;
   const ctBot = new THREE.Mesh(APP.makeRoundedBox(1.00, 0.024, 0.50, 0.13, 4), mats.oakFurniture);
@@ -693,7 +693,7 @@ APP.furnishLivingAndKitchen = function(scene, mats, arch) {
   }
   ctGroup.add(pringles, psCtrl);
   g.add(ctGroup);
-  arch.addBoxCollider(6.18, 4.62, 1.06, 0.56);
+  arch.addBoxCollider(6.18, 4.74, 1.06, 0.56, 0.418);
 
   // Dark Charcoal Plush Lounge Armchair (7.42, 5.44) facing West (-X), away from the East window blinds
   const armG = new THREE.Group();
@@ -871,6 +871,8 @@ APP.furnishLivingAndKitchen = function(scene, mats, arch) {
   // 4. Poster on Hallway/Living transition wall (X = 3.22, Z = 6.55)
   addArtFrame(0.46, 0.78, 3.23, 1.56, 6.55, Math.PI / 2, 'louisiana_gill', mats.oakFurniture, false);
 
+  const S = APP.XZ || 1;
+  g.scale.set(S, 1, S);
   scene.add(g);
   return g;
 };

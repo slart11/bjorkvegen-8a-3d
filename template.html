@@ -8,7 +8,7 @@
 </head>
 <body class="zombie-mode">
   <div id="canvas-wrap">
-    <canvas id="gl"></canvas>
+    <canvas id="gl" tabindex="0"></canvas>
   </div>
 
   <div id="hurt-vignette"></div>
@@ -53,7 +53,7 @@
       <div class="zh-item">
         <span class="zh-label">HP</span>
         <div class="hp-track"><div class="hp-fill" id="hp-fill"></div></div>
-        <strong id="hp-text">100</strong>
+        <strong id="hp-text">120</strong>
       </div>
       <div class="sep"></div>
       <div class="zh-item"><span class="zh-label">Bølge</span><strong id="wave-text">1</strong></div>
@@ -100,14 +100,6 @@
       </div>
       <div id="talent-grid" class="talent-grid"></div>
     </div>
-  </div>
-
-  <div class="panel hunger-hud hud" id="hunger-hud">
-    <div class="hunger-top">
-      <span>SULT</span>
-      <strong id="hunger-text">100%</strong>
-    </div>
-    <div class="hunger-track"><div class="hunger-fill" id="hunger-fill"></div></div>
   </div>
 
   <div class="panel minimap-wrap hud">

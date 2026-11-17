@@ -4,6 +4,7 @@ window.APP = window.APP || {};
 APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
   const g = new THREE.Group();
   const H = APP.H;
+  const S = APP.XZ || 1;
   const addArt = APP.addArtFrame;
   const addPlant = APP.addPlant;
 
@@ -393,7 +394,7 @@ APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
       fg.add(cap);
     }
     g.add(fg);
-    arch.colliders.push({ kind: 'seg', x1, z1, x2, z2, pad: 0.08, enabled: true });
+    arch.colliders.push({ kind: 'seg', x1: x1 * S, z1: z1 * S, x2: x2 * S, z2: z2 * S, pad: 0.08 * S, enabled: true });
   }
   addSlatFence(5.90, -0.68, 9.45, -0.68, 0.96);
   addSlatFence(9.45, -0.68, 9.93, 2.20, 0.96);
@@ -455,6 +456,7 @@ APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
   const balcRail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.96, 3.50), mats.fenceBeige);
   balcRail.position.set(9.93, 3.08, 1.07);
   upperGroup.add(upperBox, roofCap, balcFloor, balcRail);
+  upperGroup.scale.set(S, 1, S);
   scene.add(upperGroup);
 
   // Adjacent half of 4-mannsbolig (SEK 1 to the South, Z = 10.65..21.5)
@@ -462,9 +464,9 @@ APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
   sek1.position.set(3.92, 2.60, 16.05);
   sek1.castShadow = true; sek1.receiveShadow = true;
   g.add(sek1);
-  arch.colliders.push({ kind: 'box', minX: -0.25, maxX: 8.08, minZ: 10.60, maxZ: 21.55, enabled: true });
+  arch.colliders.push({ kind: 'box', minX: -0.25 * S, maxX: 8.08 * S, minZ: 10.60 * S, maxZ: 21.55 * S, enabled: true });
   // Terrace dining table collider
-  arch.colliders.push({ kind: 'box', minX: 8.42, maxX: 9.42, minZ: 1.75, maxZ: 3.35, enabled: true });
+  arch.colliders.push({ kind: 'box', minX: 8.42 * S, maxX: 9.42 * S, minZ: 1.75 * S, maxZ: 3.35 * S, enabled: true });
 
   // ==================== SURROUNDING GROUND, HEDGE & NEIGHBORS ====================
   // Green lawn
@@ -486,7 +488,7 @@ APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
   hedgeEast.position.set(13.2, 0.80, 6.0);
   hedgeEast.castShadow = true; hedgeEast.receiveShadow = true;
   g.add(hedgeEast);
-  arch.colliders.push({ kind: 'box', minX: 12.55, maxX: 13.85, minZ: -8.5, maxZ: 20.5, enabled: true });
+  arch.colliders.push({ kind: 'box', minX: 12.55 * S, maxX: 13.85 * S, minZ: -8.5 * S, maxZ: 20.5 * S, enabled: true });
 
   // White neighbor house across the North courtyard (visible out Kitchen & Dining windows! p1_img0, p16_img0, p19_img0)
   const nHouse = new THREE.Mesh(new THREE.BoxGeometry(9.5, 4.6, 6.8), mats.sidingWhite);
@@ -544,6 +546,7 @@ APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
   hills.position.set(10, 6, -125);
   g.add(fjord, hills);
 
+  g.scale.set(S, 1, S);
   scene.add(g);
   return { group: g, upperGroup };
 };

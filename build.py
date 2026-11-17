@@ -50,7 +50,7 @@ for k, fn in art_files.items():
 
 talent_icons = {}
 ICON_DIR = os.path.join(BASE, "talent_icons")
-for k in ("spark", "armor", "iq", "taurus", "isa", "pack", "grenade", "pierce", "frost"):
+for k in ("spark", "armor", "iq", "taurus", "isa", "pack", "grenade", "pierce", "fire"):
     p = os.path.join(ICON_DIR, f"{k}.jpg")
     if os.path.exists(p):
         with open(p, "rb") as f:

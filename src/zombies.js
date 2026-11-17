@@ -2,6 +2,7 @@
 window.APP = window.APP || {};
 
 APP.createZombieSystem = function(scene, arch, blaster) {
+  const S = APP.XZ || 1;
   // ==================== PIXEL-ART MINECRAFT ZOMBIE TEXTURES ====================
   function makePixelTex(drawFn, size = 16) {
     const c = document.createElement('canvas');
@@ -165,10 +166,71 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   const matSkirt = new THREE.MeshStandardMaterial({ map: makeNoiseSkin('#b91c26', ['#9a141c', '#d12631', '#871017']), roughness: 0.85 });
   const matBelt = new THREE.MeshStandardMaterial({ color: 0x1a2022, roughness: 0.40, metalness: 0.35 });
 
-  // ==================== BUILD SINGLE MINECRAFT ZOMBIE MESH ====================
-  function createZombieMesh(armored, scale = 1.0, isVip = false) {
+  // Minecraft Creeper textures & face
+  const creeperSkinTex = makeNoiseSkin('#3ea832', ['#2c8522', '#52c444', '#26731d']);
+  const creeperFaceTex = makePixelTex((ctx) => {
+    ctx.fillStyle = '#3ea832';
+    ctx.fillRect(0, 0, 16, 16);
+    for (let y = 0; y < 16; y++) {
+      for (let x = 0; x < 16; x++) {
+        if (((x * 11 + y * 19) % 5) === 0) {
+          ctx.fillStyle = ((x + y) % 2) ? '#2f8c25' : '#52c444';
+          ctx.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+    ctx.fillStyle = '#0c0e0c';
+    ctx.fillRect(2, 3, 4, 4);
+    ctx.fillRect(10, 3, 4, 4);
+    ctx.fillRect(6, 7, 4, 4);
+    ctx.fillRect(4, 9, 8, 3);
+    ctx.fillRect(4, 12, 2, 3);
+    ctx.fillRect(10, 12, 2, 3);
+  }, 16);
+  const matCreeperSkin = new THREE.MeshStandardMaterial({ map: creeperSkinTex, roughness: 0.85 });
+  const matCreeperFace = new THREE.MeshStandardMaterial({ map: creeperFaceTex, roughness: 0.85 });
+
+  // ==================== BUILD SINGLE MINECRAFT ZOMBIE / CREEPER MESH ====================
+  function createZombieMesh(armored, scale = 1.0, isVip = false, isCreeper = false) {
     const root = new THREE.Group();
     root.scale.setScalar(scale);
+
+    if (isCreeper) {
+      const mC = matCreeperSkin.clone();
+      const mCF = matCreeperFace.clone();
+      const flashMats = [mC, mCF];
+      // 4 stubby Minecraft Creeper feet (2 front, 2 back)
+      function makeCreeperFoot(xOff, zOff) {
+        const g = new THREE.Group();
+        g.position.set(xOff, 0.38, zOff);
+        const foot = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.38, 0.18), mC);
+        foot.position.y = -0.19;
+        foot.castShadow = true;
+        g.add(foot);
+        return g;
+      }
+      const legL = new THREE.Group();
+      const legR = new THREE.Group();
+      const footFL = makeCreeperFoot(-0.11, 0.14);
+      const footFR = makeCreeperFoot(0.11, 0.14);
+      const footBL = makeCreeperFoot(-0.11, -0.14);
+      const footBR = makeCreeperFoot(0.11, -0.14);
+      legL.add(footFL, footBR);
+      legR.add(footFR, footBL);
+
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.72, 0.22), mC);
+      torso.position.set(0, 0.74, 0);
+      torso.castShadow = true;
+
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.42), [
+        mC, mC, mC, mC, mCF, mC
+      ]);
+      head.position.set(0, 1.31, 0);
+      head.castShadow = true;
+
+      root.add(legL, legR, torso, head);
+      return { root, legL, legR, armL: null, armR: null, head, torso, flashMats };
+    }
 
     if (isVip) {
       const mFace = matVipFace.clone();
@@ -374,6 +436,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   }
 
   function nearestNode(x, z) {
+    x /= S; z /= S;
     if (x > 10.05) return 'lawn';
     if (x > 5.90 && z < 1.18) return 'terrace_n';
     if (x > 8.13) return z < 2.9 ? 'terrace_n' : 'terrace_s';
@@ -453,6 +516,18 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     }
   ];
 
+  // Scale all static room graph nodes, doorway portals, and breach coordinates horizontally by APP.XZ
+  for (const k in NODES) { NODES[k][0] *= S; NODES[k][1] *= S; }
+  for (const k in DOOR_PORTALS) {
+    const dp = DOOR_PORTALS[k];
+    dp[0] *= S; dp[1] *= S; dp[2] *= S; dp[3] *= S;
+  }
+  for (const bp of BREACH_PORTALS) {
+    bp.spawn[0] *= S; bp.spawn[1] *= S;
+    bp.outside[0] *= S; bp.outside[1] *= S;
+    bp.inside[0] *= S; bp.inside[1] *= S;
+  }
+
   // ==================== PARTICLE BURSTS (GLASS SHARDS & BLOCKY SPARKS) ====================
   const particles = [];
   const shardMat = new THREE.MeshStandardMaterial({ color: 0xcfe9f8, roughness: 0.15, transparent: true, opacity: 0.78 });
@@ -481,7 +556,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   const pickupMatBlue = new THREE.MeshStandardMaterial({ color: 0x176fd6, emissive: 0x0c346b, emissiveIntensity: 0.38, roughness: 0.35 });
   const pickupMatOrange = new THREE.MeshStandardMaterial({ color: 0xff621a, emissive: 0x6b2608, emissiveIntensity: 0.42, roughness: 0.35 });
   const pickupMatDark = new THREE.MeshStandardMaterial({ color: 0x1c2028, roughness: 0.55 });
-  const pickupCoords = [[2.12, 0.00, 9.65]];
+  const pickupCoords = [[2.12 * S, 0.00, 9.65 * S]];
   pickupCoords.forEach(([px, py, pz]) => {
     const pg = new THREE.Group();
     const box = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.34, 0.46), pickupMatBlue);
@@ -569,10 +644,10 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       steamPuffs.push({ mesh: p, phase: i * 0.8 });
     }
 
-    ng.position.set(2.02, 0.90, 0.38);
+    ng.position.set(2.02 * S, 0.90, 0.38 * S);
     ng.visible = false;
     scene.add(ng);
-    return { mesh: ng, pos: new THREE.Vector3(2.02, 0.90, 0.38), active: false, spawnedForLow: false, steamPuffs };
+    return { mesh: ng, pos: new THREE.Vector3(2.02 * S, 0.90, 0.38 * S), active: false, spawnTimer: 30.0, steamPuffs };
   }
   const noodleBowl = createNoodleBowl();
 
@@ -615,7 +690,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     beacon.position.y = 0.18;
     hg.add(beacon);
 
-    hg.position.set(4.50, 0.746, 0.52);
+    hg.position.set(4.50 * S, 0.746, 0.52 * S);
     hg.visible = false;
     scene.add(hg);
     return { mesh: hg, beacon };
@@ -627,8 +702,10 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     timeLeft: 0,
     maxTime: 20.0,
     progress: 0,
+    holding: false,
+    interrupted: false,
     needHold: 3.0,
-    pos: new THREE.Vector3(4.50, 0.746, 0.52),
+    pos: new THREE.Vector3(4.50 * S, 0.746, 0.52 * S),
     mesh: hwVisual.mesh,
     beacon: hwVisual.beacon,
     phase: 0
@@ -639,13 +716,11 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   const game = {
     active: true,
     wave: 1,
+    level: 1,
     score: 0,
     kills: 0,
-    hp: 100,
-    maxHp: 100,
-    hunger: 100,
-    maxHunger: 100,
-    hungerWarned: false,
+    hp: 120,
+    maxHp: 120,
     gameOver: false,
     toSpawn: 0,
     spawnTimer: 0,
@@ -685,7 +760,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     },
     {
       id: 'taurus', col: 'dyr', row: 0, parent: null, title: 'Taurus', maxLvl: 5,
-      desc: 'Få hjelp av den svarte katten Taurus som jakter og biter zombier automatisk. (+1 skade per nivå, maks 5)'
+      desc: 'Få hjelp av den svarte katten Taurus som jakter og biter zombier automatisk. (+0.5 skade per nivå, maks 2.5)'
     },
     {
       id: 'isa', col: 'dyr', row: 1, parent: 'taurus', title: 'Isa', maxLvl: 1,
@@ -696,11 +771,11 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       desc: 'Hvert kill fra Taurus eller Isa helbreder deg (+3 HP per nivå).'
     },
     {
-      id: 'frost', col: 'vapen', row: 0, parent: null, title: 'Frostkuler', maxLvl: 3,
-      desc: 'Kulene fryser zombier du treffer så de går saktere: 20% -> 40% -> 60%.'
+      id: 'fire', col: 'vapen', row: 0, parent: null, title: 'Ildkuler', maxLvl: 4,
+      desc: 'Kulene blir brennende ildkuler som gir +1 skade per nivå (opp til 5 skade per skudd).'
     },
     {
-      id: 'pierce', col: 'vapen', row: 1, parent: 'frost', title: 'Gjennomskudd', maxLvl: 1,
+      id: 'pierce', col: 'vapen', row: 1, parent: 'fire', title: 'Gjennomskudd', maxLvl: 1,
       desc: 'Kulene går rett gjennom zombier og treffer flere zombier på rad!'
     },
     {
@@ -708,7 +783,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       desc: 'Granatskudd som eksploderer. 10 sekund cooldown • [G] eller Høyreklikk'
     }
   ];
-  const talents = { spark: 0, armor: 0, iq: 0, taurus: 0, isa: 0, pack: 0, grenade: 0, pierce: 0, frost: 0 };
+  const talents = { spark: 0, armor: 0, iq: 0, taurus: 0, isa: 0, pack: 0, grenade: 0, pierce: 0, fire: 0 };
 
   function healFromPetKill() {
     if (talents.pack > 0) {
@@ -736,13 +811,13 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     if (cur >= node.maxLvl) return false;
     talents[id] = cur + 1;
     if (id === 'taurus' && cur === 0) {
-      cat.rig.root.position.set(4.80, 0, 4.10);
+      cat.rig.root.position.set(4.80 * S, 0, 4.10 * S);
       cat.rig.root.visible = game.active;
       pickCatRoamGoal('stue');
     }
     game.talentOpen = false;
     blaster.sfx.wave();
-    showBanner(`BØLGE ${game.wave} — Valgte ${node.title} (Nivå ${talents[id]})!`, 3.0);
+    showBanner(`Nivå ${game.level} — Valgte ${node.title} (Nivå ${talents[id]})!`, 3.0);
     return true;
   }
 
@@ -768,16 +843,32 @@ APP.createZombieSystem = function(scene, arch, blaster) {
 
   let vipPending = true;
   let vipTimer = 8.0;
+  let waveQueue = [];
 
   function startWave(num) {
     game.wave = num;
-    game.toSpawn = 4 + num * 3;
+    const baseNormal = 7;
+    const extraHelmets = Math.min(3, Math.max(0, num - 1)); // +1 helmet zombie (2x HP) per wave after Wave 1, up to Wave 4
+    const extraCreepers = Math.max(0, num - 4);             // +1 exploding creeper per wave after Wave 4
+    waveQueue = [];
+    for (let i = 0; i < baseNormal; i++) waveQueue.push('normal');
+    for (let i = 0; i < extraHelmets; i++) waveQueue.push('helmet');
+    for (let i = 0; i < extraCreepers; i++) waveQueue.push('creeper');
+    for (let i = waveQueue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = waveQueue[i]; waveQueue[i] = waveQueue[j]; waveQueue[j] = tmp;
+    }
+    game.toSpawn = waveQueue.length;
     game.spawnTimer = 0.5;
     vipPending = (num === 1);
     vipTimer = (num === 1) ? 8.0 : 0;
-    game.talentOpen = (num >= 2) && hasSelectableTalent();
-    if (!game.talentOpen) {
-      blaster.sfx.wave();
+    game.talentOpen = false;
+    blaster.sfx.wave();
+    if (extraCreepers > 0) {
+      showBanner(`BØLGE ${num} — Pass på! ${extraCreepers} Creeper${extraCreepers > 1 ? 'e' : ''} + ${extraHelmets} hjelmzombier!`, 3.4);
+    } else if (extraHelmets > 0) {
+      showBanner(`BØLGE ${num} — ${extraHelmets} hjelmzombie${extraHelmets > 1 ? 'r' : ''} (2x liv)!`, 3.2);
+    } else {
       showBanner(`BØLGE ${num} — Zombiene angriper gjennom vinduer og dører!`, 3.2);
     }
   }
@@ -791,10 +882,9 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     game.isaCooldown = 0;
     isa.rig.root.visible = false;
     resetCat();
-    game.maxHp = 100;
-    game.hp = 100;
-    game.hunger = 100;
-    game.hungerWarned = false;
+    game.level = 1;
+    game.maxHp = 120;
+    game.hp = 120;
     game.score = 0;
     game.kills = 0;
     game.gameOver = false;
@@ -808,11 +898,13 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     ammoPickups.forEach(p => { p.active = true; p.mesh.visible = true; p.respawnT = 0; });
     noodleBowl.active = false;
     noodleBowl.mesh.visible = false;
-    noodleBowl.spawnedForLow = false;
+    noodleBowl.spawnTimer = 30.0;
     homework.active = false;
     homework.spawnTimer = 12.0;
     homework.timeLeft = 0;
     homework.progress = 0;
+    homework.holding = false;
+    homework.interrupted = false;
     homework.mesh.visible = false;
     startWave(1);
   }
@@ -821,18 +913,13 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     if (!noodleBowl.active) return false;
     noodleBowl.active = false;
     noodleBowl.mesh.visible = false;
-    noodleBowl.spawnedForLow = false;
-    game.hunger = game.maxHunger;
-    game.hungerWarned = false;
+    noodleBowl.spawnTimer = 30.0;
     game.noodleFxT = 1.0;
-    const missingHp = Math.max(0, game.maxHp - game.hp);
-    const healed = missingHp * 0.5;
-    game.hp = Math.min(game.maxHp, game.hp + healed);
+    game.hp = Math.min(game.maxHp, game.hp + 35);
     if (blaster.sfx.eat) blaster.sfx.eat();
     else blaster.sfx.wave();
     spawnBurst(noodleBowl.pos.x, noodleBowl.pos.y + 0.12, noodleBowl.pos.z, orangeSparkMat, 8, 2.2, 0.04);
-    const healTxt = healed >= 0.5 ? ` (+${Math.round(healed)} HP)` : '';
-    showBanner(`Spiste varme nudler på kjøkkenet! Sult 100%${healTxt}`, 2.2);
+    showBanner('Spiste varme nudler på kjøkkenet! +35 HP', 2.2);
     return true;
   }
 
@@ -860,14 +947,15 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     }
   }
 
-  function spawnOneZombie(forceVip = false) {
+  function spawnOneZombie(forceVip = false, spawnKind = 'normal') {
     const isVip = forceVip;
+    const isCreeper = !isVip && spawnKind === 'creeper';
+    const armored = !isVip && spawnKind === 'helmet';
     // VIP Minecraft character enters through the Front Door (Inngangsdør) down the hallway toward the living room!
     const portal = isVip ? (BREACH_PORTALS.find(p => p.name === 'Inngangsdør') || BREACH_PORTALS[5]) : BREACH_PORTALS[Math.floor(Math.random() * BREACH_PORTALS.length)];
-    const armored = !isVip && game.wave >= 2 && Math.random() < Math.min(0.45, (game.wave - 1) * 0.16);
-    const runner = !isVip && game.wave >= 3 && Math.random() < 0.25;
-    const scale = armored ? 1.04 : 0.98 + Math.random() * 0.06;
-    const rig = createZombieMesh(armored, scale, isVip);
+    const runner = !isVip && !isCreeper && !armored && game.wave >= 3 && Math.random() < 0.25;
+    const scale = armored ? 1.05 : (isCreeper ? 0.96 : 0.98 + Math.random() * 0.06);
+    const rig = createZombieMesh(armored, scale, isVip, isCreeper);
 
     if (isVip) {
       rig.root.position.set(portal.outside[0], -0.10, portal.outside[1] + 0.35);
@@ -881,9 +969,9 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     if (isVip) {
       approachQueue.push(portal.outside);
     } else if (portal.viaLawnOpening) {
-      approachQueue.push([10.35, 4.90], [9.45, 4.90], portal.outside);
+      approachQueue.push([10.35 * S, 4.90 * S], [9.45 * S, 4.90 * S], portal.outside);
     } else if (portal.viaTerrace) {
-      approachQueue.push([10.35, 4.90], [9.10, 4.65], [8.90, 2.00], portal.outside);
+      approachQueue.push([10.35 * S, 4.90 * S], [9.10 * S, 4.65 * S], [8.90 * S, 2.00 * S], portal.outside);
     } else {
       approachQueue.push(portal.outside);
     }
@@ -895,8 +983,13 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       queue: approachQueue,
       breachT: 0,
       breachShattered: false,
-      hp: armored ? 5 : 3,
-      speed: runner ? 1.85 : (1.15 + Math.random() * 0.35 + Math.min(0.4, game.wave * 0.06)),
+      armored,
+      isCreeper,
+      fuseT: 0,
+      hissed: false,
+      baseScale: scale,
+      hp: armored ? 6 : (isCreeper ? 4 : 3),
+      speed: runner ? 1.85 : (isCreeper ? 1.25 : (1.15 + Math.random() * 0.35 + Math.min(0.4, game.wave * 0.06))),
       walkCycle: Math.random() * 6,
       flashT: 0,
       deathT: 0,
@@ -913,8 +1006,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       knockVz: 0,
       knockT: 0,
       knockWallDmg: false,
-      frostT: 0,
-      frostSlow: 0
+      fireT: 0
     });
   }
 
@@ -1064,12 +1156,12 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     walkCycle: 0,
     speed: 3.35,
     roamRoom: 'kitchen',
-    roamX: 2.80,
-    roamZ: 1.90,
+    roamX: 2.80 * S,
+    roamZ: 1.90 * S,
     roamWait: 0,
     roamWatchT: 0,
-    roamWatchX: 4.80,
-    roamWatchZ: 4.10
+    roamWatchX: 4.80 * S,
+    roamWatchZ: 4.10 * S
   };
 
   function pickCatRoamGoal(curRoom) {
@@ -1088,7 +1180,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     cat.lungeT = 0;
     cat.walkCycle = 0;
     cat.roamWait = 0.6;
-    cat.rig.root.position.set(4.80, 0, 4.10);
+    cat.rig.root.position.set(4.80 * S, 0, 4.10 * S);
     cat.rig.root.rotation.set(0, 0, 0);
     cat.rig.root.visible = game.active && talents.taurus > 0;
     pickCatRoamGoal('stue');
@@ -1215,7 +1307,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         const z = cat.target;
         cat.biteCooldown = 0.65;
         cat.lungeT = 0.22;
-        z.hp -= talents.taurus;
+        z.hp -= talents.taurus * 0.5;
         flashZombieRed(z);
         if (blaster.sfx.catBite) blaster.sfx.catBite();
         else blaster.sfx.hit(false);
@@ -1233,7 +1325,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       }
     }
 
-    const floorY = (cPos.x > 10.05 || cPos.z < -0.78 || cPos.z > 10.60 || cPos.x < -0.15) ? -0.16 : 0;
+    const floorY = (cPos.x / S > 10.05 || cPos.z / S < -0.78 || cPos.z / S > 10.60 || cPos.x / S < -0.15) ? -0.16 : 0;
     const lungeY = cat.lungeT > 0 ? Math.sin((cat.lungeT / 0.22) * Math.PI) * 0.24 : 0;
     cPos.y += ((floorY + lungeY) - cPos.y) * Math.min(1, dt * 16);
 
@@ -1417,7 +1509,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       }
     }
 
-    const floorY = (iPos.x > 10.05 || iPos.z < -0.78 || iPos.z > 10.60 || iPos.x < -0.15) ? -0.16 : 0;
+    const floorY = (iPos.x / S > 10.05 || iPos.z / S < -0.78 || iPos.z / S > 10.60 || iPos.x / S < -0.15) ? -0.16 : 0;
     iPos.y += (floorY - iPos.y) * Math.min(1, dt * 15);
     isa.walkCycle += dt * (moving ? 16 : 4);
     const swing = moving ? Math.sin(isa.walkCycle) * 0.8 : 0;
@@ -1580,12 +1672,11 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     if (piercedSet) piercedSet.add(z);
     setCatTarget(z);
     const p = z.rig.root.position;
-    const dmg = isHead ? 2 : 1;
+    const dmg = Math.min(5, (isHead ? 2 : 1) + (talents.fire || 0));
     z.hp -= dmg;
-    if (talents.frost > 0) {
-      z.frostT = 5.0;
-      z.frostSlow = Math.min(0.60, talents.frost * 0.20);
-      spawnBurst(pt.x, pt.y, pt.z, shardMat, 4, 2.2, 0.04);
+    if (talents.fire > 0) {
+      z.fireT = 0.45;
+      spawnBurst(pt.x, pt.y, pt.z, orangeSparkMat, 6 + talents.fire * 2, 3.2, 0.055);
     }
     flashZombieRed(z);
     sfx.hit(isHead);
@@ -1664,26 +1755,17 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       }
     }
 
-    // Hunger bar slowly drops over time; reaching 0 drains HP until player eats noodles in kitchen
-    game.hunger = Math.max(0, game.hunger - dt * 1.35);
-    if (game.hunger < 25 && !game.hungerWarned) {
-      game.hungerWarned = true;
-      showBanner('Du er sulten! Gå til kjøkkenet og spis nudler!', 3.2);
-    }
-    if (game.hunger <= 0) {
-      game.hp = Math.max(0, game.hp - dt * 2.5);
-      if (game.hp <= 0) game.gameOver = true;
-    }
-
-    // Kitchen noodle bowl spawns whenever hunger drops below 50
-    if (game.hunger < 50 && !noodleBowl.active && !noodleBowl.spawnedForLow) {
-      noodleBowl.active = true;
-      noodleBowl.mesh.visible = true;
-      noodleBowl.spawnedForLow = true;
-      blaster.sfx.wave();
-      showBanner('Varme nudler er klare på kjøkkenet! (Trykk E)', 2.8);
-    }
-    if (noodleBowl.active) {
+    // Kitchen noodle bowl spawns every 30s and heals +35 HP when eaten
+    if (!noodleBowl.active) {
+      noodleBowl.spawnTimer -= dt;
+      if (noodleBowl.spawnTimer <= 0) {
+        noodleBowl.active = true;
+        noodleBowl.mesh.visible = true;
+        noodleBowl.spawnTimer = 30.0;
+        blaster.sfx.wave();
+        showBanner('Varme nudler er klare på kjøkkenet! (+35 HP • Trykk E)', 2.8);
+      }
+    } else {
       for (const sp of noodleBowl.steamPuffs) {
         sp.phase = (sp.phase + dt * 1.3) % 3.2;
         const t = sp.phase / 3.2;
@@ -1692,13 +1774,26 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       }
     }
 
-    // Dining table homework event (must hold E for 3s within 20s)
+    // Dining table homework event (must hold E for 3s within 20s; interrupted if hit by a zombie)
+    function interruptHomework() {
+      if (homework.active && (homework.progress > 0 || homework.holding)) {
+        homework.progress = 0;
+        homework.holding = false;
+        homework.interrupted = true;
+        showBanner('Zombien slo deg og avbrøt leksene! Slipp og hold [E] på nytt.', 2.5);
+      }
+    }
+
     if (!homework.active) {
+      homework.holding = false;
+      homework.interrupted = false;
       homework.spawnTimer -= dt;
       if (homework.spawnTimer <= 0) {
         homework.active = true;
         homework.timeLeft = homework.maxTime;
         homework.progress = 0;
+        homework.holding = false;
+        homework.interrupted = false;
         homework.mesh.visible = true;
         blaster.sfx.wave();
         const hwHold = getHwNeedHold();
@@ -1709,9 +1804,11 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       homework.beacon.position.y = 0.16 + Math.sin(homework.phase) * 0.05;
       homework.timeLeft = Math.max(0, homework.timeLeft - dt);
 
+      if (!holdE) homework.interrupted = false;
       const hwHold = getHwNeedHold();
       const nearHw = Math.hypot(playerPos.x - homework.pos.x, playerPos.z - homework.pos.z) < 2.15;
-      if (nearHw && holdE) {
+      homework.holding = nearHw && holdE && !homework.interrupted;
+      if (homework.holding) {
         homework.progress = Math.min(hwHold, homework.progress + dt);
       } else {
         homework.progress = 0;
@@ -1721,20 +1818,29 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         homework.active = false;
         homework.mesh.visible = false;
         homework.progress = 0;
+        homework.holding = false;
+        homework.interrupted = false;
         homework.spawnTimer = 17 + Math.random() * 8;
+        game.level = (game.level || 1) + 1;
         game.score += 200;
         blaster.sfx.wave();
         spawnBurst(homework.pos.x, homework.pos.y + 0.12, homework.pos.z, orangeSparkMat, 10, 2.5, 0.045);
-        showBanner('Lekser ferdig! +200 poeng', 2.4);
+        if (hasSelectableTalent()) {
+          game.talentOpen = true;
+        } else {
+          showBanner(`Lekser ferdig! Nivå ${game.level} (+200 poeng)`, 2.6);
+        }
       } else if (homework.timeLeft <= 0) {
         homework.active = false;
         homework.mesh.visible = false;
         homework.progress = 0;
+        homework.holding = false;
+        homework.interrupted = false;
         homework.spawnTimer = 17 + Math.random() * 8;
         game.hp = Math.max(0, game.hp - 35);
         game.hurtFlash = 0.85;
         blaster.sfx.hurt();
-        showBanner('Du rakk ikke leksene på 20s! -35 HP', 3.0);
+        showBanner('Du rakk ikke leksene på 20s! Ingen nivåoppstigning (-35 HP)', 3.0);
         if (game.hp <= 0) game.gameOver = true;
       }
     }
@@ -1770,7 +1876,8 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     if (game.toSpawn > 0) {
       game.spawnTimer -= dt;
       if (game.spawnTimer <= 0 && zombies.length < 14) {
-        spawnOneZombie(false);
+        const nextKind = waveQueue.length ? waveQueue.shift() : 'normal';
+        spawnOneZombie(false, nextKind);
         game.toSpawn--;
         game.spawnTimer = Math.max(0.95, 2.4 - game.wave * 0.18);
       }
@@ -1788,14 +1895,62 @@ APP.createZombieSystem = function(scene, arch, blaster) {
 
     const playerRoom = nearestNode(playerPos.x, playerPos.z);
 
+    // Helper: Creeper explosion shared by proximity fuse and death detonation
+    function explodeCreeperAt(creeper, idx, pPos) {
+      const cPos = creeper.rig.root.position;
+      if (cat.target === creeper) cat.target = null;
+      scene.remove(creeper.rig.root);
+      zombies.splice(idx, 1);
+
+      blaster.sfx.explode();
+      const creeperBoom = new THREE.Mesh(new THREE.SphereGeometry(0.5, 14, 10), matFireball.clone());
+      creeperBoom.position.set(cPos.x, 0.72, cPos.z);
+      scene.add(creeperBoom);
+      explosions.push({ mesh: creeperBoom, life: 0.35, maxLife: 0.35 });
+      spawnBurst(cPos.x, 0.85, cPos.z, greenMat, 18, 5.5, 0.085);
+      spawnBurst(cPos.x, 0.85, cPos.z, orangeSparkMat, 16, 6.2, 0.09);
+
+      const dPlayer = Math.hypot(pPos.x - cPos.x, pPos.z - cPos.z);
+      if (dPlayer < 3.1) {
+        const expDmg = talents.armor > 0 ? Math.round(35 * 0.7) : 35;
+        game.hp = Math.max(0, game.hp - expDmg);
+        game.hurtFlash = 0.95;
+        blaster.sfx.hurt();
+        interruptHomework();
+        if (game.hp <= 0) game.gameOver = true;
+      }
+
+      for (const other of zombies) {
+        if (other.phase === 'dying') continue;
+        const oPos = other.rig.root.position;
+        const vx = oPos.x - cPos.x, vz = oPos.z - cPos.z;
+        const dOther = Math.hypot(vx, vz);
+        if (dOther <= 3.1) {
+          other.hp -= 4;
+          flashZombieRed(other);
+          const ax = dOther > 1e-4 ? vx / dOther : 0;
+          const az = dOther > 1e-4 ? vz / dOther : 1;
+          other.knockVx = ax * 6.5;
+          other.knockVz = az * 6.5;
+          other.knockT = 0.20;
+          if (other.hp <= 0) {
+            other.phase = 'dying';
+            other.deathT = 0.75;
+            game.kills++;
+            game.score += 120;
+          }
+        }
+      }
+    }
+
     for (let i = zombies.length - 1; i >= 0; i--) {
       const z = zombies[i];
       const pos = z.rig.root.position;
 
-      // Frost slow countdown & damage/frost tint management
-      if (z.frostT > 0) {
-        z.frostT = Math.max(0, z.frostT - dt);
-        if (z.frostT <= 0 && z.flashT <= 0) {
+      // Fireball burn glow & hit flash tint management
+      if (z.fireT > 0) {
+        z.fireT = Math.max(0, z.fireT - dt);
+        if (z.fireT <= 0 && z.flashT <= 0) {
           z.rig.flashMats.forEach(m => {
             m.color.setHex(0xffffff);
             m.emissive.setHex(0x000000);
@@ -1806,24 +1961,28 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         z.flashT -= dt;
         if (z.flashT <= 0) {
           z.rig.flashMats.forEach(m => {
-            if (z.frostT > 0) {
-              m.color.setHex(0x76d4ff);
-              m.emissive.setHex(0x164a70);
+            if (z.fireT > 0) {
+              m.color.setHex(0xffb870);
+              m.emissive.setHex(0x7a2400);
             } else {
               m.color.setHex(0xffffff);
               m.emissive.setHex(0x000000);
             }
           });
         }
-      } else if (z.frostT > 0) {
+      } else if (z.fireT > 0) {
         z.rig.flashMats.forEach(m => {
-          m.color.setHex(0x76d4ff);
-          m.emissive.setHex(0x164a70);
+          m.color.setHex(0xffb870);
+          m.emissive.setHex(0x7a2400);
         });
       }
 
-      // Death tip-over animation
+      // Death tip-over animation (Creepers explode immediately upon death)
       if (z.phase === 'dying') {
+        if (z.isCreeper) {
+          explodeCreeperAt(z, i, playerPos);
+          continue;
+        }
         z.deathT -= dt;
         const p = 1 - Math.max(0, z.deathT) / 0.75;
         z.rig.root.rotation.z = Math.min(Math.PI / 2, p * Math.PI * 0.95);
@@ -1878,7 +2037,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       }
 
       let tx = playerPos.x, tz = playerPos.z;
-      let targetY = (pos.x > 10.02 || pos.z < -0.78 || pos.z > 10.60 || pos.x < -0.15) ? -0.18 : 0;
+      let targetY = (pos.x / S > 10.02 || pos.z / S < -0.78 || pos.z / S > 10.60 || pos.x / S < -0.15) ? -0.18 : 0;
 
       if (z.phase === 'approach') {
         const wp = z.queue[0];
@@ -1962,7 +2121,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         const targetYaw = Math.atan2(dx, dz);
         z.rig.root.rotation.y = targetYaw;
       }
-      const effSpeed = z.speed * (z.frostT > 0 ? Math.max(0.40, 1 - z.frostSlow) : 1);
+      const effSpeed = z.speed;
       if (dist > stopD) {
         const step = Math.min(dist - stopD, effSpeed * dt);
         const dirX = dx / dist, dirZ = dz / dist;
@@ -2018,8 +2177,10 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       const swing = Math.sin(z.walkCycle) * 0.65;
       z.rig.legL.rotation.x = swing;
       z.rig.legR.rotation.x = -swing;
-      z.rig.armL.rotation.x = -Math.PI / 2 + Math.sin(z.walkCycle * 0.7) * 0.14;
-      z.rig.armR.rotation.x = -Math.PI / 2 - Math.sin(z.walkCycle * 0.7) * 0.14;
+      if (z.rig.armL && z.rig.armR) {
+        z.rig.armL.rotation.x = -Math.PI / 2 + Math.sin(z.walkCycle * 0.7) * 0.14;
+        z.rig.armR.rotation.x = -Math.PI / 2 - Math.sin(z.walkCycle * 0.7) * 0.14;
+      }
 
       // Separation between overlapping zombies (suspended in narrow doorway corridors so they file through cleanly)
       if (!inDoorCorridor) {
@@ -2047,18 +2208,41 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         resolveZombieCollisions(pos, 0.14);
       }
 
-      // Melee bite attack when reaching player
-      if (z.atkCooldown > 0) z.atkCooldown -= dt;
+      // Creeper fuse & explosion vs normal zombie bite attack
       const distToPlayer = Math.hypot(playerPos.x - pos.x, playerPos.z - pos.z);
-      if (distToPlayer < 1.25 && z.phase === 'chase' && z.atkCooldown <= 0 && game.hurtCooldown <= 0) {
-        z.atkCooldown = 1.05;
-        game.hurtCooldown = 0.65;
-        game.hurtFlash = 0.75;
-        const biteDmg = talents.armor > 0 ? Math.round(15 * 0.7) : 15;
-        game.hp = Math.max(0, game.hp - biteDmg);
-        blaster.sfx.hurt();
-        if (game.hp <= 0) {
-          game.gameOver = true;
+      if (z.isCreeper && z.phase === 'chase') {
+        if (distToPlayer < 2.05) {
+          if (!z.hissed) {
+            z.hissed = true;
+            blaster.sfx.chip();
+          }
+          z.fuseT += dt;
+          const pulse = 1 + Math.sin(z.fuseT * 30) * 0.08 + z.fuseT * 0.16;
+          z.rig.root.scale.setScalar(z.baseScale * pulse);
+          const flashWhite = Math.floor(z.fuseT * 12) % 2 === 0;
+          z.rig.flashMats.forEach(m => m.emissive.setHex(flashWhite ? 0xffffff : 0x52ff3b));
+          if (z.fuseT >= 1.15) {
+            explodeCreeperAt(z, i, playerPos);
+            continue;
+          }
+        } else if (z.fuseT > 0) {
+          z.fuseT = Math.max(0, z.fuseT - dt * 1.5);
+          z.rig.root.scale.setScalar(z.baseScale);
+          z.rig.flashMats.forEach(m => m.emissive.setHex(0x000000));
+        }
+      } else {
+        if (z.atkCooldown > 0) z.atkCooldown -= dt;
+        if (distToPlayer < 1.25 && z.phase === 'chase' && z.atkCooldown <= 0 && game.hurtCooldown <= 0) {
+          z.atkCooldown = 1.05;
+          game.hurtCooldown = 0.65;
+          game.hurtFlash = 0.75;
+          const biteDmg = talents.armor > 0 ? Math.round(15 * 0.7) : 15;
+          game.hp = Math.max(0, game.hp - biteDmg);
+          blaster.sfx.hurt();
+          interruptHomework();
+          if (game.hp <= 0) {
+            game.gameOver = true;
+          }
         }
       }
     }

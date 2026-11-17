@@ -1,10 +1,12 @@
 // Architectural Shell: Exact Floorplan Walls, Windows, Doors, Floors, Ceilings, Colliders
 window.APP = window.APP || {};
 
-APP.H = 2.42; // Ceiling height (m)
+APP.H = 2.42; // Normal ceiling height (m)
+APP.XZ = 1.24; // Wider & roomier floorplan expansion in X/Z only
 
 APP.buildArchitecture = function(scene, mats) {
   const H = APP.H;
+  const S = APP.XZ;
   const archGroup = new THREE.Group();
   const ceilingGroup = new THREE.Group();
   const colliders = [];     // Static AABB / segment colliders: { x1, z1, x2, z2, r }
@@ -12,13 +14,13 @@ APP.buildArchitecture = function(scene, mats) {
   const blindSlats = [];    // Individual vertical blind slats zombies can smash through
   const exteriorWallRefs = [];
 
-  // Helper: add wall collision box (axis-aligned or angled capsule-line)
+  // Helper: add wall collision box (axis-aligned or angled capsule-line) in scaled world coords
   function addSegmentCollider(x1, z1, x2, z2, halfThick, isWindowWall = false) {
-    colliders.push({ kind: 'seg', x1, z1, x2, z2, pad: halfThick, enabled: true, isWindowWall });
+    colliders.push({ kind: 'seg', x1: x1 * S, z1: z1 * S, x2: x2 * S, z2: z2 * S, pad: halfThick * S, enabled: true, isWindowWall });
     return colliders.length - 1;
   }
-  function addBoxCollider(cx, cz, wx, wz) {
-    colliders.push({ kind: 'box', minX: cx - wx / 2, maxX: cx + wx / 2, minZ: cz - wz / 2, maxZ: cz + wz / 2, enabled: true });
+  function addBoxCollider(cx, cz, wx, wz, topY = undefined) {
+    colliders.push({ kind: 'box', minX: (cx - wx / 2) * S, maxX: (cx + wx / 2) * S, minZ: (cz - wz / 2) * S, maxZ: (cz + wz / 2) * S, topY, enabled: true });
     return colliders.length - 1;
   }
 
@@ -133,8 +135,8 @@ APP.buildArchitecture = function(scene, mats) {
         g.add(slat);
         blindSlats.push({
           mesh: slat,
-          wx: cx + cosR * sx + sinR * sz,
-          wz: cz - sinR * sx + cosR * sz,
+          wx: (cx + cosR * sx + sinR * sz) * S,
+          wz: (cz - sinR * sx + cosR * sz) * S,
           broken: false
         });
       }
@@ -699,6 +701,8 @@ APP.buildArchitecture = function(scene, mats) {
   addCeilingFixture(6.15, 7.80, 'plafond');
   addCeilingFixture(6.40, 9.70, 'plafond');
 
+  archGroup.scale.set(S, 1, S);
+  ceilingGroup.scale.set(S, 1, S);
   scene.add(archGroup);
   scene.add(ceilingGroup);
 

@@ -222,6 +222,22 @@ APP.createBlasterSystem = function(scene, camera, arch) {
     return dg;
   }
 
+  const mFireCore = new THREE.MeshBasicMaterial({ color: 0xfff08a });
+  const mFireGlow = new THREE.MeshBasicMaterial({ color: 0xff6210, transparent: true, opacity: 0.78 });
+  const mFireTail = new THREE.MeshBasicMaterial({ color: 0xff2b00, transparent: true, opacity: 0.55 });
+
+  // Helper: blazing fireball projectile when Ildkuler talent is active
+  function makeFireballMesh(scale = 1) {
+    const fg = new THREE.Group();
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.012 * scale, 10, 8), mFireCore);
+    const aura = new THREE.Mesh(new THREE.SphereGeometry(0.0185 * scale, 10, 8), mFireGlow);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.014 * scale, 0.055 * scale, 8), mFireTail);
+    tail.rotation.x = -Math.PI / 2;
+    tail.position.z = 0.025 * scale;
+    fg.add(core, aura, tail);
+    return fg;
+  }
+
   // ==================== BUILD 3D FIRST-PERSON X-SHOT INSANITY VIEWMODEL ====================
   const vmRoot = new THREE.Group();
   const blaster = new THREE.Group();
@@ -562,8 +578,10 @@ APP.createBlasterSystem = function(scene, camera, arch) {
   const normMatrix = new THREE.Matrix3();
 
   function getFloorY(x, z) {
-    if (x > 10.02 || z < -0.78 || z > 10.60 || x < -0.15) return -0.165;
-    if (x > 8.05 || (x > 5.85 && z < 2.85 && z > -0.75)) return -0.005;
+    const s = APP.XZ || 1;
+    const ux = x / s, uz = z / s;
+    if (ux > 10.02 || uz < -0.78 || uz > 10.60 || ux < -0.15) return -0.165;
+    if (ux > 8.05 || (ux > 5.85 && uz < 2.85 && uz > -0.75)) return -0.005;
     return 0.015;
   }
 
@@ -610,7 +628,8 @@ APP.createBlasterSystem = function(scene, camera, arch) {
     if (velDir.lengthSq() < 1e-6) velDir.copy(aimRaycaster.ray.direction);
     else velDir.normalize();
 
-    const dart = makeDartMesh(1.6);
+    const fireLvl = (zombiesApi && zombiesApi.talents && zombiesApi.talents.fire) || 0;
+    const dart = fireLvl > 0 ? makeFireballMesh(2.45 + fireLvl * 0.18) : makeDartMesh(2.45);
     dart.position.copy(spawnPos);
     dart.lookAt(spawnPos.clone().add(velDir));
     scene.add(dart);
