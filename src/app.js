@@ -772,6 +772,346 @@ window.APP = window.APP || {};
   const hwProgressWrap = document.getElementById('hw-progress-wrap');
   const hwProgressFill = document.getElementById('hw-progress-fill');
   const hwWriteAnim = document.getElementById('hw-write-anim');
+  const hwAnimCanvas = document.getElementById('hw-anim-canvas');
+
+  // High-DPI 2D canvas renderer: open 3D hardcover notebook + live writing hexagonal pencil
+  function renderHomeworkAnim(canvas, frac, t) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const p = Math.max(0, Math.min(1, frac));
+
+    // Ambient warm study-lamp glow behind open textbook
+    const aura = ctx.createRadialGradient(310, 225, 25, 310, 225, 275);
+    aura.addColorStop(0, `rgba(56, 189, 248, ${0.22 + Math.sin(t * 3.5) * 0.05})`);
+    aura.addColorStop(0.55, 'rgba(250, 204, 21, 0.14)');
+    aura.addColorStop(1, 'rgba(15, 23, 42, 0)');
+    ctx.fillStyle = aura;
+    ctx.fillRect(0, 0, W, H);
+
+    // Book drop shadow
+    ctx.save();
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.52)';
+    ctx.beginPath();
+    ctx.roundRect(62, 108, 496, 250, 18);
+    ctx.fill();
+    ctx.restore();
+
+    // Navy leather hardcover with brass corner protectors
+    const coverGrad = ctx.createLinearGradient(64, 96, 556, 354);
+    coverGrad.addColorStop(0, '#2563eb');
+    coverGrad.addColorStop(0.5, '#1e3a8a');
+    coverGrad.addColorStop(1, '#172554');
+    ctx.fillStyle = coverGrad;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.roundRect(66, 98, 488, 248, 16);
+    ctx.fill();
+    ctx.stroke();
+
+    // Brass corner guards
+    ctx.fillStyle = '#fbbf24';
+    for (const [cx, cy, sx, sy] of [[68, 100, 1, 1], [552, 100, -1, 1], [68, 344, 1, -1], [552, 344, -1, -1]]) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + sx * 26, cy);
+      ctx.lineTo(cx, cy + sy * 26);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Stacked fanned page edges under spread
+    for (let layer = 3; layer >= 1; layer--) {
+      ctx.fillStyle = layer % 2 === 0 ? '#e2e8f0' : '#cbd5e1';
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(78 + layer * 2, 104 + layer * 3.5, 464 - layer * 4, 234, 8);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Swaying red silk bookmark ribbon below spine
+    const sway = Math.sin(t * 2.8) * 7;
+    ctx.fillStyle = '#dc2626';
+    ctx.strokeStyle = '#7f1d1d';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(304, 332);
+    ctx.lineTo(316, 332);
+    ctx.quadraticCurveTo(316 + sway * 0.5, 358, 318 + sway, 378);
+    ctx.lineTo(310 + sway, 369);
+    ctx.lineTo(302 + sway, 378);
+    ctx.quadraticCurveTo(304 + sway * 0.5, 358, 304, 332);
+    ctx.fill();
+    ctx.stroke();
+
+    // Left curved open page
+    const leftGrad = ctx.createLinearGradient(82, 0, 310, 0);
+    leftGrad.addColorStop(0, '#fefce8');
+    leftGrad.addColorStop(0.82, '#fffbeb');
+    leftGrad.addColorStop(1, '#d6d3d1');
+    ctx.fillStyle = leftGrad;
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(84, 108);
+    ctx.quadraticCurveTo(198, 92, 310, 114);
+    ctx.lineTo(310, 334);
+    ctx.quadraticCurveTo(198, 314, 84, 328);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Right curved open page
+    const rightGrad = ctx.createLinearGradient(310, 0, 538, 0);
+    rightGrad.addColorStop(0, '#cbd5e1');
+    rightGrad.addColorStop(0.14, '#fffbeb');
+    rightGrad.addColorStop(1, '#fef9c3');
+    ctx.fillStyle = rightGrad;
+    ctx.beginPath();
+    ctx.moveTo(310, 114);
+    ctx.quadraticCurveTo(422, 92, 536, 108);
+    ctx.lineTo(536, 328);
+    ctx.quadraticCurveTo(422, 314, 310, 334);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Ruled notebook lines & red margins on both pages
+    ctx.strokeStyle = 'rgba(59, 130, 246, 0.30)';
+    ctx.lineWidth = 1.4;
+    for (let r = 0; r < 6; r++) {
+      const y = 148 + r * 30;
+      ctx.beginPath();
+      ctx.moveTo(96, y - 3);
+      ctx.quadraticCurveTo(202, y - 12, 298, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(322, y);
+      ctx.quadraticCurveTo(420, y - 12, 524, y - 3);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.42)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(122, 107); ctx.lineTo(122, 322); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(346, 110); ctx.lineTo(346, 325); ctx.stroke();
+
+    // Left page geometry diagram & neat equations
+    ctx.save();
+    ctx.strokeStyle = '#1e293b';
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.18)';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(144, 214); ctx.lineTo(246, 214); ctx.lineTo(144, 148); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.strokeRect(144, 200, 14, 14);
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 16px "Segoe UI", sans-serif';
+    ctx.fillText('a² + b² = c²', 142, 246);
+    ctx.fillStyle = '#1d4ed8';
+    ctx.font = 'bold 15px "Segoe UI", sans-serif';
+    ctx.fillText('2x + 5 = 17', 142, 276);
+    ctx.fillStyle = '#15803d';
+    ctx.fillText('x = 6  ✓', 142, 304);
+    ctx.restore();
+
+    // Center spine crease shadow
+    const crease = ctx.createLinearGradient(294, 0, 326, 0);
+    crease.addColorStop(0, 'rgba(15, 23, 42, 0)');
+    crease.addColorStop(0.5, 'rgba(15, 23, 42, 0.28)');
+    crease.addColorStop(1, 'rgba(15, 23, 42, 0)');
+    ctx.fillStyle = crease;
+    ctx.fillRect(294, 108, 32, 226);
+
+    // Live progressive handwriting strokes on right page (4 cursive lines + green checkmark)
+    const lines = [
+      { y: 145, len: 146, col: '#0f172a', seed: 1.1 },
+      { y: 175, len: 138, col: '#0f172a', seed: 2.7 },
+      { y: 205, len: 152, col: '#1d4ed8', seed: 4.3 },
+      { y: 235, len: 126, col: '#0f172a', seed: 5.9 },
+      { y: 265, len: 110, col: '#15803d', seed: 7.4 }
+    ];
+    const writeSpan = Math.min(1, p / 0.88);
+    const totalLen = lines.reduce((s, l) => s + l.len, 0);
+    let drawnTarget = writeSpan * totalLen;
+    let tipX = 358, tipY = 145;
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let li = 0; li < lines.length; li++) {
+      const ln = lines[li];
+      const take = Math.max(0, Math.min(ln.len, drawnTarget));
+      drawnTarget -= ln.len;
+      if (take <= 0) break;
+
+      ctx.strokeStyle = ln.col;
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      const steps = Math.max(2, Math.floor(take / 3));
+      for (let s = 0; s <= steps; s++) {
+        const px = 356 + (take * s) / steps;
+        const dx = px - 356;
+        // Skip small word spaces cleanly while creating organic handwriting waves
+        const wave = Math.sin(dx * 0.34 + ln.seed) * 4.5 + Math.cos(dx * 0.85 + ln.seed * 2) * 2.2;
+        const arcY = ln.y - Math.sin(((px - 322) / 202) * Math.PI) * 5 + wave;
+        if (s === 0) ctx.moveTo(px, arcY);
+        else ctx.lineTo(px, arcY);
+        if (s === steps) {
+          tipX = px;
+          tipY = arcY;
+        }
+      }
+      ctx.stroke();
+    }
+
+    // Bold completion checkmark when finishing (> 88%)
+    if (p > 0.88) {
+      const cp = Math.min(1, (p - 0.88) / 0.12);
+      ctx.strokeStyle = '#16a34a';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(476, 282);
+      if (cp < 0.45) {
+        const k = cp / 0.45;
+        tipX = 476 + 14 * k;
+        tipY = 282 + 16 * k;
+        ctx.lineTo(tipX, tipY);
+      } else {
+        const k = (cp - 0.45) / 0.55;
+        ctx.lineTo(490, 298);
+        tipX = 490 + 28 * k;
+        tipY = 298 - 32 * k;
+        ctx.lineTo(tipX, tipY);
+      }
+      ctx.stroke();
+    }
+
+    // Subtle fast pen-tip jitter while actively writing
+    const jx = tipX + Math.sin(t * 28) * 1.4;
+    const jy = tipY + Math.cos(t * 24) * 1.1;
+
+    // Focus spark burst right at the graphite contact point
+    const glow = ctx.createRadialGradient(jx, jy, 1, jx, jy, 24);
+    glow.addColorStop(0, 'rgba(56, 189, 248, 0.95)');
+    glow.addColorStop(0.45, 'rgba(250, 204, 21, 0.45)');
+    glow.addColorStop(1, 'rgba(56, 189, 248, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(jx, jy, 24, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Floating magic focus motes rising from pencil tip
+    for (let m = 0; m < 6; m++) {
+      const mp = (t * 1.9 + m * 0.17) % 1;
+      const mx = jx + Math.sin(m * 2.3 + t * 5) * (10 + mp * 18);
+      const my = jy - mp * 52;
+      ctx.fillStyle = m % 2 === 0
+        ? `rgba(125, 211, 252, ${(1 - mp) * 0.9})`
+        : `rgba(253, 224, 71, ${(1 - mp) * 0.85})`;
+      ctx.beginPath();
+      ctx.arc(mx, my, 2.2 + (1 - mp) * 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Pencil cast shadow on the cream notebook page
+    ctx.save();
+    ctx.translate(jx + 6, jy + 12);
+    ctx.rotate(-0.42 + Math.sin(t * 16) * 0.03);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.20)';
+    ctx.beginPath();
+    ctx.ellipse(76, 4, 82, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 3D Faceted Hexagonal Golden Pencil anchored cleanly at (jx, jy)
+    ctx.save();
+    ctx.translate(jx, jy);
+    ctx.rotate(-0.66 + Math.sin(t * 18) * 0.045 + Math.cos(t * 11) * 0.025);
+
+    // Turned cedar wood sharpening cone + dark graphite tip
+    const woodGrad = ctx.createLinearGradient(0, -10, 0, 10);
+    woodGrad.addColorStop(0, '#ffedd5');
+    woodGrad.addColorStop(0.55, '#fdba74');
+    woodGrad.addColorStop(1, '#c2410c');
+    ctx.fillStyle = woodGrad;
+    ctx.strokeStyle = '#7c2d12';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(32, -10);
+    ctx.lineTo(35, -4);
+    ctx.lineTo(32, 0);
+    ctx.lineTo(35, 5);
+    ctx.lineTo(32, 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Metallic graphite lead core
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(12, -3.8);
+    ctx.lineTo(12, 3.8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.beginPath();
+    ctx.moveTo(1, -0.3);
+    ctx.lineTo(11, -3.2);
+    ctx.lineTo(11, -1.2);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3-facet hexagonal yellow lacquer barrel
+    ctx.fillStyle = '#fef08a'; // top highlight facet
+    ctx.fillRect(33, -10, 114, 6);
+    ctx.fillStyle = '#f59e0b'; // center amber facet
+    ctx.fillRect(33, -4, 114, 8);
+    ctx.fillStyle = '#b45309'; // bottom shaded facet
+    ctx.fillRect(33, 4, 114, 6);
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 1.8;
+    ctx.strokeRect(33, -10, 114, 20);
+    ctx.fillStyle = '#78350f';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText('HB', 122, 3.5);
+
+    // Brushed aluminum ferrule with raised crimp rings
+    const ferrGrad = ctx.createLinearGradient(0, -10, 0, 10);
+    ferrGrad.addColorStop(0, '#f8fafc');
+    ferrGrad.addColorStop(0.5, '#cbd5e1');
+    ferrGrad.addColorStop(1, '#64748b');
+    ctx.fillStyle = ferrGrad;
+    ctx.strokeStyle = '#475569';
+    ctx.fillRect(147, -10.5, 22, 21);
+    ctx.strokeRect(147, -10.5, 22, 21);
+    ctx.beginPath();
+    ctx.moveTo(153, -10); ctx.lineTo(153, 10);
+    ctx.moveTo(162, -10); ctx.lineTo(162, 10);
+    ctx.stroke();
+
+    // Soft coral-pink rubber eraser with glossy highlight
+    const erGrad = ctx.createLinearGradient(0, -10, 0, 10);
+    erGrad.addColorStop(0, '#fda4af');
+    erGrad.addColorStop(0.55, '#f43f5e');
+    erGrad.addColorStop(1, '#be123c');
+    ctx.fillStyle = erGrad;
+    ctx.strokeStyle = '#881337';
+    ctx.beginPath();
+    ctx.roundRect(169, -10, 22, 20, [0, 7, 7, 0]);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.beginPath();
+    ctx.roundRect(172, -7, 14, 3.5, 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
   const hwHudSep = document.getElementById('hw-hud-sep');
   const hwHud = document.getElementById('hw-hud');
   const hwTimerEl = document.getElementById('hw-timer');
@@ -1063,7 +1403,13 @@ window.APP = window.APP || {};
           hwProgressWrap.classList.add('show');
           hwProgressFill.style.width = `${Math.min(100, (hsPrompt.progress / hsPrompt.needHold) * 100)}%`;
         }
-        if (hwWriteAnim) hwWriteAnim.classList.toggle('show', !!(hsPrompt.holding && hsPrompt.progress > 0));
+        if (hwWriteAnim) {
+          const isWriting = !!(hsPrompt.holding && hsPrompt.progress > 0);
+          hwWriteAnim.classList.toggle('show', isWriting);
+          if (isWriting && hwAnimCanvas) {
+            renderHomeworkAnim(hwAnimCanvas, hsPrompt.progress / hsPrompt.needHold, clock.elapsedTime);
+          }
+        }
       } else {
         if (hwProgressWrap) hwProgressWrap.classList.remove('show');
         if (hwWriteAnim) hwWriteAnim.classList.remove('show');

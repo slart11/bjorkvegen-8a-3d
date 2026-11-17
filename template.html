@@ -13,153 +13,121 @@
 
   <div id="hurt-vignette"></div>
   <div id="noodle-spin-overlay" class="noodle-spin-overlay" aria-hidden="true">
-    <svg viewBox="0 0 220 220" width="220" height="220">
+    <svg viewBox="0 0 240 240" width="220" height="220">
       <defs>
         <radialGradient id="nd-aura" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#fde047" stop-opacity="0.45"/>
-          <stop offset="68%" stop-color="#f97316" stop-opacity="0.22"/>
+          <stop offset="0%" stop-color="#fde047" stop-opacity="0.55"/>
+          <stop offset="65%" stop-color="#f97316" stop-opacity="0.25"/>
           <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
         </radialGradient>
         <linearGradient id="nd-ring" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#fef08a"/>
-          <stop offset="50%" stop-color="#f59e0b"/>
-          <stop offset="100%" stop-color="#ea580c"/>
+          <stop offset="45%" stop-color="#f59e0b"/>
+          <stop offset="100%" stop-color="#dc2626"/>
         </linearGradient>
-        <radialGradient id="nd-bg" cx="45%" cy="38%" r="60%">
-          <stop offset="0%" stop-color="#292524"/>
-          <stop offset="100%" stop-color="#0f172a"/>
+        <radialGradient id="nd-bg" cx="42%" cy="34%" r="68%">
+          <stop offset="0%" stop-color="#312e2b"/>
+          <stop offset="60%" stop-color="#1c1917"/>
+          <stop offset="100%" stop-color="#090d16"/>
         </radialGradient>
-        <radialGradient id="nd-broth" cx="48%" cy="42%" r="58%">
-          <stop offset="0%" stop-color="#fde047"/>
-          <stop offset="55%" stop-color="#f59e0b"/>
-          <stop offset="100%" stop-color="#b45309"/>
+        <radialGradient id="nd-broth" cx="46%" cy="40%" r="60%">
+          <stop offset="0%" stop-color="#fef08a"/>
+          <stop offset="48%" stop-color="#f59e0b"/>
+          <stop offset="100%" stop-color="#9a3412"/>
         </radialGradient>
-        <linearGradient id="nd-bowl" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="nd-bowl" x1="15%" y1="0%" x2="85%" y2="100%">
           <stop offset="0%" stop-color="#ef4444"/>
-          <stop offset="52%" stop-color="#b91c1c"/>
-          <stop offset="100%" stop-color="#7f1d1d"/>
+          <stop offset="48%" stop-color="#b91c1c"/>
+          <stop offset="100%" stop-color="#450a0a"/>
         </linearGradient>
         <linearGradient id="nd-wood" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#f59e0b"/>
-          <stop offset="100%" stop-color="#92400e"/>
+          <stop offset="0%" stop-color="#fbbf24"/>
+          <stop offset="35%" stop-color="#b45309"/>
+          <stop offset="100%" stop-color="#451a03"/>
+        </linearGradient>
+        <linearGradient id="nd-chashu" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#fca5a5"/>
+          <stop offset="55%" stop-color="#b45309"/>
+          <stop offset="100%" stop-color="#78350f"/>
         </linearGradient>
       </defs>
-      <!-- Warm outer glow + circular rotating medallion -->
-      <circle cx="110" cy="110" r="106" fill="url(#nd-aura)"/>
-      <circle cx="110" cy="110" r="88" fill="url(#nd-bg)" stroke="url(#nd-ring)" stroke-width="5"/>
-      <circle cx="110" cy="110" r="80" fill="none" stroke="rgba(254,240,138,0.35)" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <!-- Outer aura & medallion bezel -->
+      <circle cx="120" cy="120" r="115" fill="url(#nd-aura)"/>
+      <circle cx="120" cy="120" r="97" fill="url(#nd-bg)" stroke="url(#nd-ring)" stroke-width="5.5"/>
+      <circle cx="120" cy="120" r="89" fill="none" stroke="rgba(254,240,138,0.34)" stroke-width="1.6" stroke-dasharray="5 5"/>
+
+      <!-- Roasted Nori seaweed sheets tucked behind broth -->
+      <rect x="64" y="66" width="24" height="32" rx="3" transform="rotate(-14 76 82)" fill="#064e3b" stroke="#022c22" stroke-width="1.6"/>
+      <rect x="78" y="62" width="22" height="30" rx="3" transform="rotate(-4 89 77)" fill="#065f46" stroke="#022c22" stroke-width="1.6"/>
 
       <!-- Rising steam curls -->
-      <path d="M84 58 C78 46, 92 40, 86 28" fill="none" stroke="#fef9c3" stroke-width="3.5" stroke-linecap="round" opacity="0.72"/>
-      <path d="M110 52 C104 38, 120 32, 113 18" fill="none" stroke="#fef08a" stroke-width="4" stroke-linecap="round" opacity="0.82"/>
-      <path d="M138 58 C132 46, 146 40, 140 28" fill="none" stroke="#fef9c3" stroke-width="3.5" stroke-linecap="round" opacity="0.72"/>
+      <path d="M74 62 C68 48, 84 42, 77 28" fill="none" stroke="#fef9c3" stroke-width="3.6" stroke-linecap="round" opacity="0.72"/>
+      <path d="M122 50 C114 35, 134 29, 125 14" fill="none" stroke="#fef08a" stroke-width="4.2" stroke-linecap="round" opacity="0.85"/>
+      <path d="M158 64 C151 50, 166 44, 159 30" fill="none" stroke="#fef9c3" stroke-width="3.4" stroke-linecap="round" opacity="0.7"/>
 
-      <!-- Ramen bowl lower ceramic shell & foot -->
-      <path d="M74 157 L146 157 L140 172 L80 172 Z" fill="#7f1d1d" stroke="#450a0a" stroke-width="2.5" stroke-linejoin="round"/>
-      <path d="M40 105 C40 162, 180 162, 180 105 Z" fill="url(#nd-bowl)" stroke="#450a0a" stroke-width="3"/>
-      <path d="M56 124 Q110 138 164 124" fill="none" stroke="#fbbf24" stroke-width="3" opacity="0.88" stroke-linecap="round"/>
+      <!-- Lacquered ramen bowl body, rim, sheen & pedestal -->
+      <path d="M84 173 L156 173 L149 190 L91 190 Z" fill="#450a0a" stroke="#280505" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M44 114 C44 180, 196 180, 196 114 Z" fill="url(#nd-bowl)" stroke="#450a0a" stroke-width="3.2"/>
+      <path d="M56 128 Q120 144 184 128" fill="none" stroke="#fbbf24" stroke-width="3.2" stroke-linecap="round" opacity="0.9"/>
+      <path d="M68 144 Q120 156 172 144" fill="none" stroke="#fde047" stroke-width="1.6" stroke-dasharray="6 4" opacity="0.72"/>
+      <path d="M58 134 C66 154, 82 162, 94 166" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="4.5" stroke-linecap="round"/>
 
-      <!-- Rim & golden broth interior -->
-      <ellipse cx="110" cy="105" rx="70" ry="26" fill="#fef3c7" stroke="#7f1d1d" stroke-width="3.5"/>
-      <ellipse cx="110" cy="107" rx="63" ry="21" fill="url(#nd-broth)"/>
+      <!-- Ceramic rim & shimmering golden broth -->
+      <ellipse cx="120" cy="114" rx="76" ry="29" fill="#fef3c7" stroke="#7f1d1d" stroke-width="3.5"/>
+      <ellipse cx="120" cy="116" rx="68" ry="23" fill="url(#nd-broth)"/>
+      <ellipse cx="86" cy="112" rx="8" ry="3" fill="#fef9c3" opacity="0.5"/>
+      <circle cx="152" cy="122" r="2.8" fill="#fef08a" opacity="0.75"/>
 
-      <!-- Layered glossy noodles -->
-      <path d="M60 108 Q78 90 98 108 T136 106 T160 108" fill="none" stroke="#b45309" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
-      <path d="M60 106 Q78 88 98 106 T136 104 T160 106" fill="none" stroke="#fef08a" stroke-width="6.5" stroke-linecap="round"/>
-      <path d="M68 114 Q90 96 112 114 T152 112" fill="none" stroke="#fde047" stroke-width="6" stroke-linecap="round"/>
-      <path d="M74 100 Q96 86 118 100 T148 98" fill="none" stroke="#fef9c3" stroke-width="4.5" stroke-linecap="round"/>
+      <!-- Wavy golden noodles layered inside bowl -->
+      <path d="M62 117 Q82 96 104 117 T144 115 T176 117" fill="none" stroke="#92400e" stroke-width="8.5" stroke-linecap="round" opacity="0.4"/>
+      <path d="M62 115 Q82 94 104 115 T144 113 T176 115" fill="none" stroke="#fef08a" stroke-width="7" stroke-linecap="round"/>
+      <path d="M72 125 Q96 105 120 125 T168 122" fill="none" stroke="#fde047" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M78 109 Q100 93 122 109 T162 107" fill="none" stroke="#fef9c3" stroke-width="4.8" stroke-linecap="round"/>
 
-      <!-- Soft-boiled Ajitsuke egg -->
-      <g transform="translate(82 99) rotate(-14)">
-        <ellipse cx="0" cy="0" rx="16" ry="11.5" fill="#fffbeb" stroke="#d97706" stroke-width="1.8"/>
-        <circle cx="1.5" cy="0.5" r="6.8" fill="#f97316"/>
-        <circle cx="0" cy="-1.5" r="2.2" fill="#fed7aa" opacity="0.8"/>
+      <!-- Seared Chashu pork slice -->
+      <g transform="translate(80 116) rotate(-18)">
+        <ellipse cx="0" cy="0" rx="18" ry="11" fill="url(#nd-chashu)" stroke="#451a03" stroke-width="1.6"/>
+        <path d="M-9 -2 Q0 -7 10 -1" fill="none" stroke="#fecdd3" stroke-width="2.4" stroke-linecap="round" opacity="0.8"/>
       </g>
 
-      <!-- Narutomaki pink-swirl cake -->
-      <g transform="translate(137 101) rotate(12)">
-        <circle cx="0" cy="0" r="11" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.6"/>
-        <path d="M-4 0 A4 4 0 1 1 4 0 A2.5 2.5 0 1 1 -1 0" fill="none" stroke="#fb7185" stroke-width="2.2" stroke-linecap="round"/>
+      <!-- Half marinated soft-boiled egg -->
+      <g transform="translate(106 106) rotate(-8)">
+        <ellipse cx="0" cy="0" rx="17" ry="12.5" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+        <circle cx="1.5" cy="0.5" r="7.4" fill="#f97316"/>
+        <circle cx="-1" cy="-2" r="2.4" fill="#fed7aa" opacity="0.85"/>
       </g>
 
-      <!-- Green scallions & sesame seeds -->
-      <circle cx="109" cy="111" r="4.2" fill="#22c55e" stroke="#14532d" stroke-width="1.2"/>
-      <circle cx="119" cy="96" r="3.8" fill="#4ade80" stroke="#14532d" stroke-width="1.2"/>
-      <circle cx="127" cy="112" r="3.5" fill="#22c55e" stroke="#14532d" stroke-width="1.2"/>
-      <circle cx="98" cy="91" r="1.4" fill="#fef9c3"/>
-      <circle cx="114" cy="90" r="1.4" fill="#fef9c3"/>
+      <!-- Pink-swirl Narutomaki fishcake -->
+      <g transform="translate(154 111) rotate(14)">
+        <circle cx="0" cy="0" r="12" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.8"/>
+        <path d="M-4.5 0 A4.5 4.5 0 1 1 4.5 0 A2.6 2.6 0 1 1 -1 0" fill="none" stroke="#fb7185" stroke-width="2.4" stroke-linecap="round"/>
+      </g>
+
+      <!-- Scallion rings & sesame seeds -->
+      <circle cx="132" cy="122" r="4.8" fill="#22c55e" stroke="#14532d" stroke-width="1.3"/>
+      <circle cx="132" cy="122" r="1.8" fill="#bbf7d0"/>
+      <circle cx="139" cy="104" r="4.2" fill="#4ade80" stroke="#14532d" stroke-width="1.3"/>
+      <circle cx="101" cy="125" r="4" fill="#22c55e" stroke="#14532d" stroke-width="1.2"/>
+      <circle cx="116" cy="95" r="1.6" fill="#fef9c3"/>
+      <circle cx="128" cy="97" r="1.5" fill="#fef9c3"/>
 
       <!-- Lifted noodle strands + angled wooden chopsticks -->
-      <path d="M102 102 C100 84, 108 72, 106 58" fill="none" stroke="#fef08a" stroke-width="4.5" stroke-linecap="round"/>
-      <path d="M108 104 C107 84, 114 70, 112 56" fill="none" stroke="#fde047" stroke-width="4.2" stroke-linecap="round"/>
-      <path d="M114 102 C113 84, 119 72, 117 58" fill="none" stroke="#fef9c3" stroke-width="3.6" stroke-linecap="round"/>
-      <polygon points="90,62 174,36 176,43 91,67" fill="url(#nd-wood)" stroke="#451a03" stroke-width="1.4"/>
-      <polygon points="92,70 178,52 179,59 93,75" fill="url(#nd-wood)" stroke="#451a03" stroke-width="1.4"/>
+      <path d="M110 112 C108 88, 118 72, 115 56" fill="none" stroke="#fef08a" stroke-width="5.2" stroke-linecap="round"/>
+      <path d="M117 114 C116 88, 125 70, 122 54" fill="none" stroke="#fde047" stroke-width="4.6" stroke-linecap="round"/>
+      <path d="M124 112 C123 88, 130 72, 128 56" fill="none" stroke="#fef9c3" stroke-width="3.8" stroke-linecap="round"/>
+      <polygon points="94,58 194,32 196,40 95,64" fill="url(#nd-wood)" stroke="#291003" stroke-width="1.5"/>
+      <polygon points="97,68 198,50 199,58 98,74" fill="url(#nd-wood)" stroke="#291003" stroke-width="1.5"/>
+
+      <!-- Orbiting sparkle stars -->
+      <path d="M46 72 L49 80 L57 83 L49 86 L46 94 L43 86 L35 83 L43 80 Z" fill="#fef08a"/>
+      <path d="M194 148 L196 154 L202 156 L196 158 L194 164 L192 158 L186 156 L192 154 Z" fill="#fde047"/>
     </svg>
   </div>
   <div class="crosshair"><div id="hit-marker"></div></div>
   <div id="interact-prompt" class="panel interact-prompt hud">Trykk E eller klikk for å åpne/lukke dør</div>
   <div id="hw-progress-wrap" class="panel hw-progress-wrap hud"><div id="hw-progress-fill" class="hw-progress-fill"></div></div>
   <div id="hw-write-anim" class="hw-write-anim" aria-hidden="true">
-    <svg viewBox="0 0 210 156" width="185" height="138">
-      <defs>
-        <linearGradient id="hw-cover" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#3b82f6"/>
-          <stop offset="100%" stop-color="#1d4ed8"/>
-        </linearGradient>
-        <linearGradient id="hw-page-l" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#fefce8"/>
-          <stop offset="85%" stop-color="#fef9c3"/>
-          <stop offset="100%" stop-color="#d6d3d1"/>
-        </linearGradient>
-        <linearGradient id="hw-page-r" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#e7e5e4"/>
-          <stop offset="18%" stop-color="#fffbeb"/>
-          <stop offset="100%" stop-color="#fef9c3"/>
-        </linearGradient>
-        <linearGradient id="hw-pencil-body" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="#fde047"/>
-          <stop offset="55%" stop-color="#f59e0b"/>
-          <stop offset="100%" stop-color="#b45309"/>
-        </linearGradient>
-      </defs>
-
-      <!-- Open textbook cover & binding shadow -->
-      <rect x="18" y="34" width="174" height="106" rx="8" fill="url(#hw-cover)" stroke="#1e3a8a" stroke-width="2.5"/>
-      <rect x="24" y="38" width="80" height="96" rx="3" fill="url(#hw-page-l)" stroke="#94a3b8" stroke-width="1"/>
-      <rect x="106" y="38" width="80" height="96" rx="3" fill="url(#hw-page-r)" stroke="#94a3b8" stroke-width="1"/>
-      <line x1="105" y1="36" x2="105" y2="136" stroke="#64748b" stroke-width="2"/>
-      <!-- Red bookmark ribbon -->
-      <polygon points="101,134 109,134 109,151 105,146 101,151" fill="#ef4444" stroke="#991b1b" stroke-width="1"/>
-
-      <!-- Left page completed notes & formulas -->
-      <path d="M35 54 H92 M35 67 H88 M35 80 H94 M35 93 H82 M35 106 H90 M35 119 H76" stroke="#93c5fd" stroke-width="1.2"/>
-      <path d="M36 53 Q48 48 60 53 T88 52 M36 66 Q50 61 66 66 T86 65 M36 79 Q46 74 58 79 T90 78 M36 92 Q52 88 78 92" fill="none" stroke="#1e293b" stroke-width="2.1" stroke-linecap="round"/>
-
-      <!-- Right page ruled paper + live animated handwriting lines -->
-      <path d="M116 54 H176 M116 67 H176 M116 80 H176 M116 93 H176 M116 106 H176 M116 119 H176" stroke="#93c5fd" stroke-width="1.2"/>
-      <path class="hw-ink hw-ink-1" d="M117 52 Q127 46 138 52 T162 51 T174 53" fill="none" stroke="#0f172a" stroke-width="2.4" stroke-linecap="round"/>
-      <path class="hw-ink hw-ink-2" d="M117 65 Q128 59 140 65 T165 64 T175 66" fill="none" stroke="#0f172a" stroke-width="2.4" stroke-linecap="round"/>
-      <path class="hw-ink hw-ink-3" d="M117 78 Q129 73 142 78 T166 77 T174 79" fill="none" stroke="#1d4ed8" stroke-width="2.4" stroke-linecap="round"/>
-      <path class="hw-ink hw-ink-4" d="M117 91 Q130 86 144 91 T169 90" fill="none" stroke="#0f172a" stroke-width="2.4" stroke-linecap="round"/>
-
-      <!-- Animated writing golden wooden pencil -->
-      <g class="hw-pencil">
-        <g transform="translate(136 68) rotate(-36)">
-          <!-- Pink eraser + aluminum ferrule -->
-          <rect x="52" y="-6" width="12" height="12" rx="3" fill="#f472b6" stroke="#be185d" stroke-width="1.3"/>
-          <rect x="44" y="-6" width="9" height="12" fill="#e2e8f0" stroke="#64748b" stroke-width="1.2"/>
-          <!-- Yellow hexagonal barrel -->
-          <rect x="0" y="-6" width="45" height="12" fill="url(#hw-pencil-body)" stroke="#78350f" stroke-width="1.3"/>
-          <line x1="2" y1="-2" x2="43" y2="-2" stroke="#fef9c3" stroke-width="1.3" opacity="0.75"/>
-          <!-- Sharpened wood tip + dark graphite lead -->
-          <polygon points="0,-6 -16,0 0,6" fill="#fed7aa" stroke="#9a3412" stroke-width="1.2" stroke-linejoin="round"/>
-          <polygon points="-10,-2.3 -17,0 -10,2.3" fill="#1e293b"/>
-        </g>
-        <!-- Tiny writing spark near pencil tip -->
-        <circle class="hw-spark" cx="122" cy="79" r="3.2" fill="#38bdf8"/>
-      </g>
-    </svg>
+    <canvas id="hw-anim-canvas" width="620" height="400"></canvas>
   </div>
   <div id="hw-big-banner" class="panel hw-big-banner">
     <div class="hw-big-top">
