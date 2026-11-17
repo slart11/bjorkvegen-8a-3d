@@ -1340,9 +1340,8 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     } else if (!vipPending && zombies.length === 0) {
       if (game.betweenWavesT <= 0) {
         game.betweenWavesT = 3.2;
-        blaster.addAmmo(45);
         game.hp = Math.min(game.maxHp, game.hp + 25);
-        showBanner(`BØLGE ${game.wave} KLART! +45 piler & +25 HP`, 3.0);
+        showBanner(`BØLGE ${game.wave} KLART! +25 HP`, 3.0);
         blaster.sfx.wave();
       } else {
         game.betweenWavesT -= dt;
