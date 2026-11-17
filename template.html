@@ -78,6 +78,8 @@
 
   <div id="room-indicator" class="panel room-indicator hud">Stue og kjøkken (35,5 m²)</div>
 
+  <div class="panel skills-hud hud" id="skills-hud"></div>
+
   <div class="panel ammo-hud hud" id="ammo-hud">
     <div class="ammo-brand">ZURU <span>X-SHOT INSANITY</span></div>
     <div class="ammo-count"><strong id="ammo-cur">15</strong><span>/ <span id="ammo-res">72</span></span></div>
@@ -89,6 +91,16 @@
       <h2>Zombiene tok deg!</h2>
       <p id="gameover-stats">Bølge 1 • 0 poeng</p>
       <button class="room-btn active" id="btn-gameover-restart">Spill på nytt</button>
+    </div>
+  </div>
+
+  <div id="talent-overlay" class="talent-overlay">
+    <div class="panel talent-card">
+      <div class="talent-header">
+        <h2 id="talent-title">Velg ferdighet — Bølge 1</h2>
+        <p id="talent-sub">Velg én ferdighet — å velge en ferdighet låser opp raden rett under.</p>
+      </div>
+      <div id="talent-grid" class="talent-grid"></div>
     </div>
   </div>
 
@@ -110,6 +122,7 @@
 
   <script>__THREE_JS__</script>
   <script>window.ART_DATA = __ART_DATA__;</script>
+  <script>window.TALENT_ICONS = __TALENT_ICONS__;</script>
   <script>__APP_SCRIPTS__</script>
 </body>
 </html>

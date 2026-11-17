@@ -97,6 +97,29 @@ APP.createBlasterSystem = function(scene, camera, arch) {
       playNoise(0.14, 700, 1.2, 0.12);
       playTone('triangle', 480, 720, 0.11, 0.14);
       setTimeout(() => playTone('triangle', 720, 960, 0.15, 0.13), 100);
+    },
+    kick() {
+      // Heavy melee kick swoosh & thud
+      playTone('triangle', 155, 52, 0.16, 0.28);
+      playNoise(0.11, 520, 0.9, 0.20);
+    },
+    explode() {
+      // Deep grenade detonation boom + crackle
+      playTone('sawtooth', 140, 34, 0.42, 0.34);
+      playNoise(0.45, 280, 0.7, 0.32);
+    },
+    chip() {
+      playNoise(0.06, 1600, 1.4, 0.10, true);
+      playTone('triangle', 260, 110, 0.05, 0.09);
+    },
+    crumble() {
+      playNoise(0.22, 420, 0.9, 0.22);
+      playTone('sawtooth', 130, 48, 0.18, 0.16);
+    },
+    bark() {
+      // Heroic big white shepherd double bark!
+      playTone('sawtooth', 290, 130, 0.11, 0.24);
+      setTimeout(() => playTone('sawtooth', 340, 150, 0.14, 0.22), 130);
     }
   };
 
@@ -342,12 +365,155 @@ APP.createBlasterSystem = function(scene, camera, arch) {
   // Collect all solid opaque world meshes right now (architecture, furniture, floors, ceilings, yard)
   // so darts fly laser-straight to the exact crosshair target and bounce realistically off ANY object.
   const bounceMeshes = [];
+  const destructibles = [];
+  const tmpBox = new THREE.Box3();
+  const tmpSize = new THREE.Vector3();
+  const tmpCenter = new THREE.Vector3();
+  function isDescendant(obj, ancestor) {
+    for (let c = obj; c; c = c.parent) if (c === ancestor) return true;
+    return false;
+  }
   scene.traverse(obj => {
-    if (!obj.isMesh || obj === flashMesh) return;
+    if (!obj.isMesh || obj === flashMesh || isDescendant(obj, vmRoot)) return;
     if (obj.material && obj.material.side === THREE.BackSide) return;
     if (obj.material && obj.material.transparent && obj.material.opacity < 0.7) return;
     bounceMeshes.push(obj);
+
+    if (obj.userData.noDestroy || (arch && isDescendant(obj, arch.ceilingGroup))) return;
+    tmpBox.setFromObject(obj);
+    tmpBox.getSize(tmpSize);
+    const isFlatGround = (tmpSize.y < 0.24 && tmpBox.max.y <= 0.14 && (tmpSize.x > 1.8 || tmpSize.z > 1.8));
+    if (isFlatGround) {
+      obj.userData.noDestroy = true;
+      return;
+    }
+    if (!obj.userData.destructible) {
+      obj.userData.destructible = 'interior';
+      obj.userData.maxHp = 3;
+      obj.userData.hp = 3;
+    }
+    destructibles.push(obj);
   });
+
+  // ==================== DESTRUCTIBLE WALLS & FURNITURE DEBRIS ====================
+  const debris = [];
+  const chipMarks = [];
+  const chipGeo = new THREE.BoxGeometry(0.10, 0.10, 0.014);
+  const chipMat = new THREE.MeshStandardMaterial({ color: 0x26211c, roughness: 0.95 });
+  const fallbackDebrisMat = new THREE.MeshStandardMaterial({ color: 0xcfc6b6, roughness: 0.85 });
+  const chunkGeo = new THREE.BoxGeometry(1, 1, 1);
+
+  function getDebrisMat(mesh, faceIndex) {
+    let m = mesh.material;
+    if (Array.isArray(m)) {
+      const matIdx = (faceIndex !== undefined && faceIndex !== null) ? Math.floor(faceIndex / 2) : 0;
+      m = m[matIdx] || m[0];
+    }
+    if (!m || !m.color) return fallbackDebrisMat;
+    if (!m.userData._chunkMat) {
+      m.userData._chunkMat = new THREE.MeshStandardMaterial({
+        color: m.color.clone(),
+        map: m.map || null,
+        roughness: 0.85
+      });
+    }
+    return m.userData._chunkMat;
+  }
+
+  function spawnDebris(mesh, pt, normal, faceIndex, count, speedScale = 1) {
+    const mat = getDebrisMat(mesh, faceIndex);
+    for (let i = 0; i < count; i++) {
+      if (debris.length >= 180) {
+        const old = debris.shift();
+        scene.remove(old.mesh);
+      }
+      const cm = new THREE.Mesh(chunkGeo, mat);
+      const sx = 0.045 + Math.random() * 0.065;
+      const sy = 0.035 + Math.random() * 0.055;
+      const sz = 0.030 + Math.random() * 0.050;
+      cm.scale.set(sx, sy, sz);
+      cm.position.set(
+        pt.x + (Math.random() - 0.5) * 0.16,
+        pt.y + (Math.random() - 0.5) * 0.16,
+        pt.z + (Math.random() - 0.5) * 0.16
+      );
+      cm.castShadow = true;
+      scene.add(cm);
+      debris.push({
+        mesh: cm,
+        vx: (normal.x * (1.2 + Math.random() * 1.8) + (Math.random() - 0.5) * 2.4) * speedScale,
+        vy: (1.2 + Math.random() * 2.4) * speedScale,
+        vz: (normal.z * (1.2 + Math.random() * 1.8) + (Math.random() - 0.5) * 2.4) * speedScale,
+        rx: (Math.random() - 0.5) * 12,
+        ry: (Math.random() - 0.5) * 12,
+        life: 9.0,
+        resting: false
+      });
+    }
+  }
+
+  function removeChipMarksFor(mesh) {
+    for (let i = chipMarks.length - 1; i >= 0; i--) {
+      if (chipMarks[i].owner === mesh) {
+        scene.remove(chipMarks[i].mesh);
+        chipMarks.splice(i, 1);
+      }
+    }
+  }
+
+  function damageMesh(mesh, pt, normal, faceIndex, dmg = 1) {
+    spawnDebris(mesh, pt, normal, faceIndex, dmg >= 2 ? 8 : 5, dmg >= 2 ? 1.25 : 1.0);
+    if (!mesh.userData.destructible || mesh.userData.noDestroy) return;
+    mesh.userData.hp -= dmg;
+    if (mesh.userData.hp > 0) {
+      sfx.chip();
+      if (chipMarks.length >= 120) {
+        const oldMark = chipMarks.shift();
+        scene.remove(oldMark.mesh);
+      }
+      const mark = new THREE.Mesh(chipGeo, chipMat);
+      mark.position.copy(pt).addScaledVector(normal, 0.008);
+      mark.lookAt(pt.clone().add(normal));
+      mark.rotateZ(Math.random() * Math.PI);
+      scene.add(mark);
+      chipMarks.push({ mesh: mark, owner: mesh });
+    } else {
+      // Break open completely -> real hole in wall / shattered furniture piece!
+      sfx.crumble();
+      tmpBox.setFromObject(mesh);
+      tmpBox.getCenter(tmpCenter);
+      spawnDebris(mesh, tmpCenter, normal, faceIndex, 10, 1.35);
+      mesh.visible = false;
+      const bi = bounceMeshes.indexOf(mesh);
+      if (bi >= 0) bounceMeshes.splice(bi, 1);
+      removeChipMarksFor(mesh);
+    }
+  }
+
+  function damageDestructiblesInRadius(pt, radius, dmg = 4) {
+    for (const mesh of destructibles) {
+      if (!mesh.visible || mesh.userData.noDestroy) continue;
+      tmpBox.setFromObject(mesh);
+      tmpBox.getCenter(tmpCenter);
+      const dist = tmpCenter.distanceTo(pt);
+      if (dist <= radius + 0.35) {
+        const n = tmpCenter.clone().sub(pt);
+        if (n.lengthSq() < 1e-4) n.set(0, 1, 0);
+        else n.normalize();
+        damageMesh(mesh, tmpCenter, n, 0, dmg);
+      }
+    }
+  }
+
+  function resetWorldDamage() {
+    for (const mesh of destructibles) {
+      mesh.userData.hp = mesh.userData.maxHp || 3;
+      mesh.visible = true;
+      if (bounceMeshes.indexOf(mesh) < 0) bounceMeshes.push(mesh);
+    }
+    while (chipMarks.length) scene.remove(chipMarks.pop().mesh);
+    while (debris.length) scene.remove(debris.pop().mesh);
+  }
 
   // ==================== PROJECTILE DARTS & STATE ====================
   const darts = [];
@@ -453,6 +619,7 @@ APP.createBlasterSystem = function(scene, camera, arch) {
       vel: velDir.multiplyScalar(36),
       life: 4.0,
       phase: 'fly', // 'fly' -> 'bounce' -> 'rest'
+      pierced: new Set(),
       spinX: (Math.random() - 0.5) * 14,
       spinY: (Math.random() - 0.5) * 14
     });
@@ -527,9 +694,15 @@ APP.createBlasterSystem = function(scene, camera, arch) {
           const stepLen = stepVec.length();
           const next = prev.clone().add(stepVec);
 
-          // 1) Check zombie impact along straight flight segment
-          const zRes = zombiesApi ? zombiesApi.checkDartHit(prev, next, sfx) : null;
-          if (zRes) {
+          // 1) Check zombie impact along straight flight segment (passes straight through if Gjennomskudd active!)
+          let bouncedOnZombie = false;
+          let zGuard = 0;
+          while (zGuard++ < 4) {
+            const zRes = zombiesApi ? zombiesApi.checkDartHit(prev, next, sfx, d.pierced) : null;
+            if (!zRes) break;
+            if (zRes.pierced) {
+              continue;
+            }
             d.pos.copy(zRes.point);
             d.vel.reflect(zRes.normal).multiplyScalar(0.14);
             d.vel.y = Math.max(1.2, d.vel.y + 1.1);
@@ -537,8 +710,10 @@ APP.createBlasterSystem = function(scene, camera, arch) {
             d.vel.z += (Math.random() - 0.5) * 1.4;
             d.phase = 'bounce';
             d.life = Math.min(d.life, 3.0);
+            bouncedOnZombie = true;
             break;
           }
+          if (bouncedOnZombie) break;
 
           // 2) Check ANY 3D surface hit (wall, furniture, TV, table, floor, ceiling) -> bounce away!
           if (stepLen > 1e-5) {
@@ -560,6 +735,7 @@ APP.createBlasterSystem = function(scene, camera, arch) {
               d.vel.z += (Math.random() - 0.5) * 0.9;
               d.phase = 'bounce';
               d.life = Math.min(d.life, 3.0);
+              damageMesh(h.object, h.point, n, h.faceIndex, 1);
               break;
             }
           }
@@ -593,7 +769,110 @@ APP.createBlasterSystem = function(scene, camera, arch) {
         d.mesh.position.copy(d.pos);
       }
     }
+
+    // Update flying grenade projectiles -> explode on impact or fuse expiry
+    for (let i = grenades.length - 1; i >= 0; i--) {
+      const g = grenades[i];
+      g.fuse -= dt;
+      const prev = g.pos.clone();
+      g.vel.y -= 13.0 * dt;
+      const stepVec = g.vel.clone().multiplyScalar(dt);
+      const stepLen = stepVec.length();
+      const next = prev.clone().add(stepVec);
+      g.mesh.rotation.x += 9 * dt;
+      g.mesh.rotation.y += 7 * dt;
+
+      let hitPt = null;
+      if (stepLen > 1e-5) {
+        const dir = stepVec.clone().divideScalar(stepLen);
+        stepRaycaster.set(prev, dir);
+        stepRaycaster.near = 0;
+        stepRaycaster.far = stepLen + 0.08;
+        const zHit = zombiesApi && zombiesApi.raycastZombie ? zombiesApi.raycastZombie(stepRaycaster.ray) : null;
+        if (zHit && zHit.dist <= stepLen + 0.14) {
+          hitPt = zHit.point;
+        } else {
+          const hits = stepRaycaster.intersectObjects(bounceMeshes, false);
+          if (hits.length) hitPt = hits[0].point;
+        }
+      }
+      const floorY = getFloorY(next.x, next.z) + 0.04;
+      if (!hitPt && next.y <= floorY) {
+        next.y = floorY;
+        hitPt = next;
+      }
+      if (hitPt || g.fuse <= 0) {
+        const boomPt = hitPt || next;
+        sfx.explode();
+        damageDestructiblesInRadius(boomPt, 2.5, 4);
+        if (zombiesApi && zombiesApi.explodeAt) zombiesApi.explodeAt(boomPt);
+        scene.remove(g.mesh);
+        grenades.splice(i, 1);
+      } else {
+        g.pos.copy(next);
+        g.mesh.position.copy(next);
+      }
+    }
+
+    // Update falling/bouncing wall & furniture debris chunks
+    for (let i = debris.length - 1; i >= 0; i--) {
+      const db = debris[i];
+      db.life -= dt;
+      if (db.life <= 0) {
+        scene.remove(db.mesh);
+        debris.splice(i, 1);
+        continue;
+      }
+      if (db.resting) continue;
+      db.vy -= 12.0 * dt;
+      db.mesh.position.x += db.vx * dt;
+      db.mesh.position.y += db.vy * dt;
+      db.mesh.position.z += db.vz * dt;
+      db.mesh.rotation.x += db.rx * dt;
+      db.mesh.rotation.y += db.ry * dt;
+      const floorY = getFloorY(db.mesh.position.x, db.mesh.position.z) + 0.025;
+      if (db.mesh.position.y <= floorY) {
+        db.mesh.position.y = floorY;
+        if (Math.abs(db.vy) > 0.75) {
+          db.vy = -db.vy * 0.28;
+          db.vx *= 0.55;
+          db.vz *= 0.55;
+        } else {
+          db.resting = true;
+        }
+      }
+    }
   }
 
-  return { state, sfx, setVisible, resetAmmo, addAmmo, startReload, fire, update };
+  const grenades = [];
+  const matGrenade = new THREE.MeshStandardMaterial({ color: 0x3b6e28, emissive: 0x1e3814, roughness: 0.4 });
+  const matGrenadeBand = new THREE.MeshStandardMaterial({ color: 0xff621a, emissive: 0x802a00, roughness: 0.3 });
+
+  function fireGrenade() {
+    if (!state.enabled) return false;
+    state.recoil = 1.25;
+    state.flashT = 0.08;
+    sfx.shoot();
+    sfx.door();
+
+    aimRaycaster.setFromCamera({ x: 0, y: 0 }, camera);
+    aimRaycaster.near = 0.02;
+    aimRaycaster.far = 45;
+    muzzleBore.getWorldPosition(muzzleWorld);
+    const spawnPos = aimRaycaster.ray.origin.clone().addScaledVector(aimRaycaster.ray.direction, 0.35);
+    const vel = aimRaycaster.ray.direction.clone().multiplyScalar(19);
+    vel.y += 2.2;
+
+    const gg = new THREE.Group();
+    const shell = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.13, 0.11), matGrenade);
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.035, 0.12), matGrenadeBand);
+    gg.add(shell, band);
+    gg.position.copy(spawnPos);
+    scene.add(gg);
+
+    grenades.push({ mesh: gg, pos: spawnPos, vel, fuse: 1.45 });
+    return true;
+  }
+
+  return { state, sfx, setVisible, resetAmmo, resetWorldDamage, addAmmo, startReload, fire, fireGrenade, update };
 };

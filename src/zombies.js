@@ -651,8 +651,96 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     bannerT: 0,
     hitMarkerT: 0,
     hitWasHead: false,
-    noodleFxT: 0
+    noodleFxT: 0,
+    talentOpen: false,
+    kickCooldown: 0,
+    grenadeCooldown: 0,
+    isaActiveT: 0,
+    isaCooldown: 0
   };
+
+  // ==================== 3x3 TALENT TREE ====================
+  const TALENT_COLS = [
+    { id: 'fysisk', title: 'Fysisk' },
+    { id: 'dyr', title: 'Dyr' },
+    { id: 'vapen', title: 'Våpen' }
+  ];
+  const TALENT_NODES = [
+    {
+      id: 'spark', col: 'fysisk', row: 0, parent: null, title: 'Spark', maxLvl: 5,
+      desc: 'Zombien sparkes 2 meter bak. (+2 m per oppgradering opp til 10 m) • Tast [Q]'
+    },
+    {
+      id: 'armor', col: 'fysisk', row: 1, parent: 'spark', title: 'Tykke klær', maxLvl: 1,
+      desc: '+30 maks HP og zombier gjør halvparten så mye skade når de biter deg.'
+    },
+    {
+      id: 'fysisk_3', col: 'fysisk', row: 2, parent: 'armor', title: 'Kommer snart', maxLvl: 0,
+      desc: 'Låses opp av Tykke klær.'
+    },
+    {
+      id: 'taurus', col: 'dyr', row: 0, parent: null, title: 'Taurus', maxLvl: 5,
+      desc: 'Få hjelp av den svarte katten Taurus. (+1 skade per angrep opp til 5)'
+    },
+    {
+      id: 'isa', col: 'dyr', row: 1, parent: 'taurus', title: 'Isa', maxLvl: 1,
+      desc: 'En stor hvit sveitsisk schäfer angriper alle zombier i 5 sek (1 slag dreper!). Cooldown 20s • Tast [C]'
+    },
+    {
+      id: 'dyr_3', col: 'dyr', row: 2, parent: 'isa', title: 'Kommer snart', maxLvl: 0,
+      desc: 'Låses opp av Isa.'
+    },
+    {
+      id: 'grenade', col: 'vapen', row: 0, parent: null, title: 'Granatskudd', maxLvl: 1,
+      desc: 'Granatskudd som eksploderer. 10 sekund cooldown • [G] eller Høyreklikk'
+    },
+    {
+      id: 'pierce', col: 'vapen', row: 1, parent: 'grenade', title: 'Gjennomskudd', maxLvl: 1,
+      desc: 'Kulene går rett gjennom zombier og treffer flere zombier på rad!'
+    },
+    {
+      id: 'vapen_3', col: 'vapen', row: 2, parent: 'pierce', title: 'Kommer snart', maxLvl: 0,
+      desc: 'Låses opp av Gjennomskudd.'
+    }
+  ];
+  const talents = { spark: 0, armor: 0, taurus: 0, isa: 0, grenade: 0, pierce: 0 };
+
+  function isTalentUnlocked(node) {
+    return !node.parent || (talents[node.parent] || 0) >= 1;
+  }
+
+  function hasSelectableTalent() {
+    return TALENT_NODES.some(n => n.maxLvl > 0 && isTalentUnlocked(n) && (talents[n.id] || 0) < n.maxLvl);
+  }
+
+  function chooseTalent(id) {
+    if (!game.talentOpen) return false;
+    const node = TALENT_NODES.find(n => n.id === id);
+    if (!node || node.maxLvl <= 0 || !isTalentUnlocked(node)) return false;
+    const cur = talents[id] || 0;
+    if (cur >= node.maxLvl) return false;
+    talents[id] = cur + 1;
+    if (id === 'taurus' && cur === 0) {
+      cat.rig.root.position.set(4.80, 0, 4.10);
+      cat.rig.root.visible = game.active;
+      pickCatRoamGoal('stue');
+    } else if (id === 'armor' && cur === 0) {
+      game.maxHp = 130;
+      game.hp = Math.min(game.maxHp, game.hp + 30);
+    }
+    game.talentOpen = false;
+    blaster.sfx.wave();
+    showBanner(`BØLGE ${game.wave} — Valgte ${node.title} (Nivå ${talents[id]})!`, 3.0);
+    return true;
+  }
+
+  function skipTalentIfFull() {
+    if (!game.talentOpen || hasSelectableTalent()) return false;
+    game.talentOpen = false;
+    blaster.sfx.wave();
+    showBanner(`BØLGE ${game.wave} — Alle tilgjengelige ferdigheter er maks!`, 3.0);
+    return true;
+  }
 
   function showBanner(txt, dur = 2.6) {
     game.bannerMsg = txt;
@@ -675,13 +763,23 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     game.spawnTimer = 0.5;
     vipPending = (num === 1);
     vipTimer = (num === 1) ? 8.0 : 0;
-    blaster.sfx.wave();
-    showBanner(`BØLGE ${num} — Zombiene angriper gjennom vinduer og dører!`, 3.2);
+    game.talentOpen = hasSelectableTalent();
+    if (!game.talentOpen) {
+      blaster.sfx.wave();
+      showBanner(`BØLGE ${num} — Zombiene angriper gjennom vinduer og dører!`, 3.2);
+    }
   }
 
   function resetGame() {
     clearZombies();
+    for (const k in talents) talents[k] = 0;
+    game.kickCooldown = 0;
+    game.grenadeCooldown = 0;
+    game.isaActiveT = 0;
+    game.isaCooldown = 0;
+    isa.rig.root.visible = false;
     resetCat();
+    game.maxHp = 100;
     game.hp = 100;
     game.hunger = 100;
     game.hungerWarned = false;
@@ -693,6 +791,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     game.noodleFxT = 0;
     game.betweenWavesT = 0;
     blaster.resetAmmo();
+    if (blaster.resetWorldDamage) blaster.resetWorldDamage();
     ammoPickups.forEach(p => { p.active = true; p.mesh.visible = true; p.respawnT = 0; });
     noodleBowl.active = false;
     noodleBowl.mesh.visible = false;
@@ -794,7 +893,10 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       stuckT: 0,
       watchX: rig.root.position.x,
       watchZ: rig.root.position.z,
-      watchT: 0
+      watchT: 0,
+      knockVx: 0,
+      knockVz: 0,
+      knockT: 0
     });
   }
 
@@ -970,7 +1072,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     cat.roamWait = 0.6;
     cat.rig.root.position.set(4.80, 0, 4.10);
     cat.rig.root.rotation.set(0, 0, 0);
-    cat.rig.root.visible = game.active;
+    cat.rig.root.visible = game.active && talents.taurus > 0;
     pickCatRoamGoal('stue');
   }
 
@@ -992,8 +1094,11 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   }
 
   function updateCat(dt, playerPos, playerRoom) {
-    cat.rig.root.visible = game.active;
-    if (!game.active) return;
+    if (!game.active || talents.taurus <= 0) {
+      cat.rig.root.visible = false;
+      return;
+    }
+    cat.rig.root.visible = true;
     if (cat.biteCooldown > 0) cat.biteCooldown = Math.max(0, cat.biteCooldown - dt);
     if (cat.lungeT > 0) cat.lungeT = Math.max(0, cat.lungeT - dt);
 
@@ -1082,7 +1187,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         const z = cat.target;
         cat.biteCooldown = 0.65;
         cat.lungeT = 0.22;
-        z.hp -= 2;
+        z.hp -= talents.taurus;
         flashZombieRed(z);
         if (blaster.sfx.catBite) blaster.sfx.catBite();
         else blaster.sfx.hit(false);
@@ -1114,7 +1219,273 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   }
 
   function getCatDot() {
+    if (talents.taurus <= 0) return null;
     return { x: cat.rig.root.position.x, z: cat.rig.root.position.z, hunting: !!cat.target };
+  }
+
+  // ==================== ISA (WHITE SWISS SHEPHERD SUMMON) ====================
+  function createWhiteShepherdMesh() {
+    const matFur = new THREE.MeshStandardMaterial({ color: 0xf4f2eb, roughness: 0.72 });
+    const matRuff = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.68 });
+    const matEarIn = new THREE.MeshStandardMaterial({ color: 0xe6adb8, roughness: 0.7 });
+    const matNose = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.45 });
+    const matEye = new THREE.MeshBasicMaterial({ color: 0x2d1a0e });
+    const matCollar = new THREE.MeshStandardMaterial({ color: 0xc92a2a, roughness: 0.4 });
+
+    const root = new THREE.Group();
+    // Large athletic shepherd torso
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.28, 0.68), matFur);
+    body.position.set(0, 0.42, 0);
+    body.castShadow = true; body.receiveShadow = true;
+    root.add(body);
+
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.30, 0.24), matRuff);
+    chest.position.set(0, 0.44, 0.24);
+    chest.castShadow = true;
+    root.add(chest);
+
+    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.06, 0.08), matCollar);
+    collar.position.set(0, 0.50, 0.34);
+    root.add(collar);
+
+    const head = new THREE.Group();
+    head.position.set(0, 0.59, 0.43);
+    const skull = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.24), matFur);
+    skull.position.set(0, 0, 0.03);
+    skull.castShadow = true;
+    head.add(skull);
+
+    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.11, 0.16), matFur);
+    snout.position.set(0, -0.04, 0.20);
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.04, 0.03), matNose);
+    nose.position.set(0, -0.005, 0.285);
+    head.add(snout, nose);
+
+    // Upright pointed White Swiss Shepherd ears + dark amber eyes
+    const earGeo = new THREE.BoxGeometry(0.065, 0.14, 0.04);
+    const earInGeo = new THREE.BoxGeometry(0.036, 0.095, 0.015);
+    [-1, 1].forEach(s => {
+      const ear = new THREE.Mesh(earGeo, matFur);
+      ear.position.set(s * 0.082, 0.17, -0.02);
+      const earIn = new THREE.Mesh(earInGeo, matEarIn);
+      earIn.position.set(s * 0.082, 0.16, -0.002);
+      const eye = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.035, 0.015), matEye);
+      eye.position.set(s * 0.068, 0.035, 0.152);
+      head.add(ear, earIn, eye);
+    });
+    root.add(head);
+
+    function makeDogLeg(x, z) {
+      const piv = new THREE.Group();
+      piv.position.set(x, 0.32, z);
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.32, 0.09), matFur);
+      m.position.y = -0.16;
+      m.castShadow = true;
+      piv.add(m);
+      root.add(piv);
+      return piv;
+    }
+    const legFL = makeDogLeg(-0.105, 0.24);
+    const legFR = makeDogLeg(0.105, 0.24);
+    const legBL = makeDogLeg(-0.105, -0.24);
+    const legBR = makeDogLeg(0.105, -0.24);
+
+    // Long fluffy white shepherd tail
+    const tailPiv = new THREE.Group();
+    tailPiv.position.set(0, 0.45, -0.34);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.095, 0.38), matRuff);
+    tail.position.set(0, -0.06, -0.16);
+    tail.rotation.x = 0.55;
+    tailPiv.add(tail);
+    root.add(tailPiv);
+
+    root.visible = false;
+    scene.add(root);
+    return { root, head, legFL, legFR, legBL, legBR, tailPiv };
+  }
+
+  const isaRig = createWhiteShepherdMesh();
+  const isa = { rig: isaRig, walkCycle: 0, speed: 5.8, biteCooldown: 0 };
+
+  function tryCallIsa(playerPos) {
+    if (!game.active || game.gameOver || game.talentOpen || talents.isa < 1) return false;
+    if (game.isaCooldown > 0 || game.isaActiveT > 0) return false;
+    game.isaActiveT = 5.0;
+    game.isaCooldown = 20.0;
+    isa.biteCooldown = 0;
+    isa.rig.root.position.set(playerPos.x, 0, playerPos.z);
+    resolveZombieCollisions(isa.rig.root.position, 0.16);
+    isa.rig.root.visible = true;
+    if (blaster.sfx.bark) blaster.sfx.bark();
+    spawnBurst(isa.rig.root.position.x, 0.5, isa.rig.root.position.z, orangeSparkMat, 12, 3.6, 0.055);
+    showBanner('Isa angriper alle zombier i 5 sekunder!', 2.6);
+    return true;
+  }
+
+  function updateIsa(dt) {
+    if (!game.active || game.isaActiveT <= 0) {
+      isa.rig.root.visible = false;
+      return;
+    }
+    isa.rig.root.visible = true;
+    if (isa.biteCooldown > 0) isa.biteCooldown = Math.max(0, isa.biteCooldown - dt);
+
+    const iPos = isa.rig.root.position;
+    let nearestZ = null, bestD = Infinity;
+    for (const z of zombies) {
+      if (z.phase === 'dying') continue;
+      const p = z.rig.root.position;
+      const d = Math.hypot(p.x - iPos.x, p.z - iPos.z);
+      if (d < bestD) { bestD = d; nearestZ = z; }
+    }
+
+    let moving = false;
+    if (nearestZ) {
+      const tPos = nearestZ.rig.root.position;
+      let tx = tPos.x, tz = tPos.z;
+      const iRoom = nearestNode(iPos.x, iPos.z);
+      const tRoom = nearestNode(tPos.x, tPos.z);
+      if (iRoom !== tRoom) {
+        const path = findPathNodes(iRoom, tRoom);
+        if (path.length >= 2) {
+          const portalPt = getPortalTarget(path[0], path[1], iPos);
+          tx = portalPt[0]; tz = portalPt[1];
+        }
+      }
+      openDoorIfNear(iPos.x, iPos.z, null);
+      const dx = tx - iPos.x, dz = tz - iPos.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > 0.05) {
+        isa.rig.root.rotation.y = Math.atan2(dx, dz);
+        moving = true;
+        const step = Math.min(dist, isa.speed * dt);
+        iPos.x += (dx / dist) * step;
+        iPos.z += (dz / dist) * step;
+        resolveZombieCollisions(iPos, 0.16);
+      }
+
+      // 1-hit kill sweep against any zombie Isa reaches!
+      for (const z of zombies) {
+        if (z.phase === 'dying') continue;
+        const p = z.rig.root.position;
+        if (Math.hypot(p.x - iPos.x, p.z - iPos.z) <= 1.20) {
+          z.hp = 0;
+          z.phase = 'dying';
+          z.deathT = 0.75;
+          flashZombieRed(z);
+          game.kills++;
+          game.score += 120;
+          if (cat.target === z) cat.target = null;
+          spawnBurst(p.x, 0.75, p.z, orangeSparkMat, 10, 4.0, 0.055);
+          if (isa.biteCooldown <= 0) {
+            isa.biteCooldown = 0.28;
+            if (blaster.sfx.bark) blaster.sfx.bark();
+          }
+          game.hitMarkerT = 0.18;
+          game.hitWasHead = true;
+        }
+      }
+    }
+
+    const floorY = (iPos.x > 10.05 || iPos.z < -0.78 || iPos.z > 10.60 || iPos.x < -0.15) ? -0.16 : 0;
+    iPos.y += (floorY - iPos.y) * Math.min(1, dt * 15);
+    isa.walkCycle += dt * (moving ? 16 : 4);
+    const swing = moving ? Math.sin(isa.walkCycle) * 0.8 : 0;
+    isa.rig.legFL.rotation.x = swing;
+    isa.rig.legBR.rotation.x = swing;
+    isa.rig.legFR.rotation.x = -swing;
+    isa.rig.legBL.rotation.x = -swing;
+    isa.rig.tailPiv.rotation.y = Math.sin(isa.walkCycle * 0.8) * 0.45;
+  }
+
+  function getIsaDot() {
+    if (game.isaActiveT <= 0) return null;
+    return { x: isa.rig.root.position.x, z: isa.rig.root.position.z };
+  }
+
+  // ==================== SPARK (KICK) & GRANATSKUDD (GRENADE EXPLOSION) ====================
+  const explosions = [];
+  const matFireball = new THREE.MeshBasicMaterial({ color: 0xff7b1a, transparent: true, opacity: 0.78 });
+
+  function kickZombies(playerPos, dirX, dirZ) {
+    if (!game.active || game.gameOver || game.talentOpen || talents.spark <= 0 || game.kickCooldown > 0) return false;
+    game.kickCooldown = 1.25;
+    if (blaster.sfx.kick) blaster.sfx.kick();
+    const pushDist = talents.spark * 2;
+    const kickDur = 0.25;
+    let kickedCount = 0;
+
+    for (const z of zombies) {
+      if (z.phase === 'dying') continue;
+      const p = z.rig.root.position;
+      const vx = p.x - playerPos.x, vz = p.z - playerPos.z;
+      const d = Math.hypot(vx, vz);
+      if (d > 2.45) continue;
+      const ax = d > 1e-4 ? vx / d : dirX;
+      const az = d > 1e-4 ? vz / d : dirZ;
+      const dot = ax * dirX + az * dirZ;
+      if (dot >= 0.25 || d <= 1.45) {
+        z.knockVx = ax * (pushDist / kickDur);
+        z.knockVz = az * (pushDist / kickDur);
+        z.knockT = kickDur;
+        z.detourT = 0;
+        z.stuckT = 0;
+        flashZombieRed(z);
+        spawnBurst(p.x, 0.65, p.z, orangeSparkMat, 7, 3.2, 0.045);
+        kickedCount++;
+      }
+    }
+    if (kickedCount > 0) {
+      game.hitMarkerT = 0.16;
+      game.hitWasHead = false;
+    }
+    return true;
+  }
+
+  function tryFireGrenade() {
+    if (!game.active || game.gameOver || game.talentOpen || talents.grenade < 1 || game.grenadeCooldown > 0) return false;
+    if (blaster.fireGrenade && blaster.fireGrenade()) {
+      game.grenadeCooldown = 10.0;
+      return true;
+    }
+    return false;
+  }
+
+  function explodeAt(pt) {
+    const fireball = new THREE.Mesh(new THREE.SphereGeometry(0.45, 14, 10), matFireball.clone());
+    fireball.position.copy(pt);
+    scene.add(fireball);
+    explosions.push({ mesh: fireball, life: 0.35, maxLife: 0.35 });
+    spawnBurst(pt.x, pt.y + 0.15, pt.z, orangeSparkMat, 26, 6.8, 0.075);
+
+    let hits = 0;
+    for (const z of zombies) {
+      if (z.phase === 'dying') continue;
+      const p = z.rig.root.position;
+      const vx = p.x - pt.x, vz = p.z - pt.z;
+      const d = Math.hypot(vx, vz);
+      if (d <= 3.6) {
+        const dmg = d <= 1.65 ? 6 : 3;
+        z.hp -= dmg;
+        flashZombieRed(z);
+        const ax = d > 1e-4 ? vx / d : 0;
+        const az = d > 1e-4 ? vz / d : 1;
+        z.knockVx = ax * 7.5;
+        z.knockVz = az * 7.5;
+        z.knockT = 0.22;
+        if (z.hp <= 0) {
+          z.phase = 'dying';
+          z.deathT = 0.75;
+          game.kills++;
+          game.score += 120;
+        }
+        hits++;
+      }
+    }
+    if (hits > 0) {
+      game.hitMarkerT = 0.22;
+      game.hitWasHead = true;
+    }
   }
 
   // ==================== DART HIT DETECTION ====================
@@ -1143,7 +1514,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     return best;
   }
 
-  function checkDartHit(segA, segB, sfx) {
+  function checkDartHit(segA, segB, sfx, piercedSet) {
     const segDir = segB.clone().sub(segA);
     const segLen = segDir.length();
     if (segLen < 1e-6) segDir.set(0, 0, -1);
@@ -1154,6 +1525,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     for (let i = zombies.length - 1; i >= 0; i--) {
       const z = zombies[i];
       if (z.phase === 'dying') continue;
+      if (piercedSet && piercedSet.has(z)) continue;
       const p = z.rig.root.position;
       hitHeadBox.min.set(p.x - 0.30, p.y + 1.22, p.z - 0.30);
       hitHeadBox.max.set(p.x + 0.30, p.y + 1.72, p.z + 0.30);
@@ -1174,6 +1546,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     if (!bestHit) return null;
 
     const { z, isHead, pt, box } = bestHit;
+    if (piercedSet) piercedSet.add(z);
     setCatTarget(z);
     const p = z.rig.root.position;
     const dmg = isHead ? 2 : 1;
@@ -1202,7 +1575,12 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     const normal = new THREE.Vector3(pt.x - cx, 0.22, pt.z - cz);
     if (normal.lengthSq() < 0.005) normal.copy(segDir).negate().setY(0.22);
     normal.normalize();
-    return { point: pt.clone().addScaledVector(normal, 0.06), normal, isHead };
+    return {
+      point: pt.clone().addScaledVector(normal, 0.06),
+      normal,
+      isHead,
+      pierced: talents.pierce > 0
+    };
   }
 
   // ==================== UPDATE LOOP ====================
@@ -1227,7 +1605,28 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       if (pt.life <= 0) { scene.remove(pt.mesh); particles.splice(i, 1); }
     }
 
-    if (!game.active || game.gameOver) return;
+    // Update explosion fireballs
+    for (let i = explosions.length - 1; i >= 0; i--) {
+      const ex = explosions[i];
+      ex.life -= dt;
+      const p = 1 - Math.max(0, ex.life) / ex.maxLife;
+      ex.mesh.scale.setScalar(1 + p * 5.2);
+      ex.mesh.material.opacity = Math.max(0, (1 - p) * 0.85);
+      if (ex.life <= 0) { scene.remove(ex.mesh); explosions.splice(i, 1); }
+    }
+
+    if (!game.active || game.gameOver || game.talentOpen) return;
+
+    if (game.kickCooldown > 0) game.kickCooldown = Math.max(0, game.kickCooldown - dt);
+    if (game.grenadeCooldown > 0) game.grenadeCooldown = Math.max(0, game.grenadeCooldown - dt);
+    if (game.isaCooldown > 0) game.isaCooldown = Math.max(0, game.isaCooldown - dt);
+    if (game.isaActiveT > 0) {
+      game.isaActiveT = Math.max(0, game.isaActiveT - dt);
+      if (game.isaActiveT <= 0) {
+        isa.rig.root.visible = false;
+        spawnBurst(isa.rig.root.position.x, 0.5, isa.rig.root.position.z, orangeSparkMat, 8, 2.5, 0.045);
+      }
+    }
 
     // Hunger bar slowly drops over time; reaching 0 drains HP until player eats noodles in kitchen
     game.hunger = Math.max(0, game.hunger - dt * 1.35);
@@ -1376,6 +1775,20 @@ APP.createZombieSystem = function(scene, arch, blaster) {
           spawnBurst(pos.x, 0.3, pos.z, greenMat, 8, 2.2, 0.06);
           scene.remove(z.rig.root);
           zombies.splice(i, 1);
+        }
+        continue;
+      }
+
+      // Apply kick / grenade blast knockback slide with wall collision clamping
+      if (z.knockT > 0) {
+        const kdt = Math.min(dt, z.knockT);
+        z.knockT -= kdt;
+        const steps = 4;
+        const sd = kdt / steps;
+        for (let s = 0; s < steps; s++) {
+          pos.x += z.knockVx * sd;
+          pos.z += z.knockVz * sd;
+          resolveZombieCollisions(pos, 0.14);
         }
         continue;
       }
@@ -1543,7 +1956,8 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         z.atkCooldown = 1.05;
         game.hurtCooldown = 0.65;
         game.hurtFlash = 0.75;
-        game.hp = Math.max(0, game.hp - 15);
+        const biteDmg = talents.armor > 0 ? 7 : 15;
+        game.hp = Math.max(0, game.hp - biteDmg);
         blaster.sfx.hurt();
         if (game.hp <= 0) {
           game.gameOver = true;
@@ -1552,6 +1966,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     }
 
     updateCat(dt, playerPos, playerRoom);
+    updateIsa(dt);
   }
 
   function getMinimapDots() {
@@ -1562,10 +1977,12 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   resetGame();
 
   return {
-    game, resetGame, setGameActive, raycastZombie, checkDartHit, setCatTarget,
+    game, talents, TALENT_COLS, TALENT_NODES, isTalentUnlocked, hasSelectableTalent, chooseTalent, skipTalentIfFull,
+    kickZombies, tryFireGrenade, tryCallIsa, explodeAt,
+    resetGame, setGameActive, raycastZombie, checkDartHit, setCatTarget,
     tryEatNoodles, getNoodleState: () => ({ active: noodleBowl.active, x: noodleBowl.pos.x, z: noodleBowl.pos.z }),
     getAmmoStates: () => ammoPickups.map(p => ({ active: p.active, x: p.pos.x, z: p.pos.z })),
     getHomeworkState: () => ({ active: homework.active, timeLeft: homework.timeLeft, progress: homework.progress, needHold: homework.needHold, x: homework.pos.x, z: homework.pos.z }),
-    update, getMinimapDots, getCatDot, isVipPending: () => vipPending
+    update, getMinimapDots, getCatDot, getIsaDot, isVipPending: () => vipPending
   };
 };

@@ -275,16 +275,29 @@ window.APP = window.APP || {};
     }
     if (e.code === 'Space') {
       e.preventDefault();
-      if (mode === 'walk' && !zombies.game.gameOver && player.grounded) {
+      if (mode === 'walk' && !zombies.game.gameOver && !zombies.game.talentOpen && player.grounded) {
         player.velY = 4.4;
         player.grounded = false;
         glide = null;
       }
     }
+    if (zombies.game.talentOpen) return;
     if (e.code === 'KeyE') {
       const hws = (zombies.game.active && !zombies.game.gameOver && zombies.getHomeworkState) ? zombies.getHomeworkState() : null;
       if (hws && hws.active && Math.hypot(player.pos.x - hws.x, player.pos.z - hws.z) < 2.15) return;
       if (zombies.tryEatNoodles) zombies.tryEatNoodles(player.pos);
+    }
+    if (e.code === 'KeyQ' && mode === 'walk' && zombies.kickZombies) {
+      blaster.sfx.unlock();
+      zombies.kickZombies(player.pos, -Math.sin(player.yaw), -Math.cos(player.yaw));
+    }
+    if (e.code === 'KeyG' && mode === 'walk' && zombies.tryFireGrenade) {
+      blaster.sfx.unlock();
+      zombies.tryFireGrenade();
+    }
+    if (e.code === 'KeyC' && mode === 'walk' && zombies.tryCallIsa) {
+      blaster.sfx.unlock();
+      zombies.tryCallIsa(player.pos);
     }
     if (e.code === 'KeyH') document.body.classList.toggle('hud-hidden');
     if (e.code === 'KeyR') { blaster.sfx.unlock(); blaster.startReload(); }
@@ -299,8 +312,15 @@ window.APP = window.APP || {};
   });
   window.addEventListener('keyup', e => { keys[e.code] = false; });
 
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
   let isDragging = false, dragMoved = 0, lastX = 0, lastY = 0;
   canvas.addEventListener('mousedown', e => {
+    if (zombies.game.talentOpen) return;
+    if (e.button === 2 && mode === 'walk' && zombies.tryFireGrenade) {
+      blaster.sfx.unlock();
+      zombies.tryFireGrenade();
+      return;
+    }
     if (e.button !== 0) return;
     blaster.sfx.unlock();
     if (mode === 'walk' && controlMode === 'nomouse') {
@@ -641,14 +661,29 @@ window.APP = window.APP || {};
       }
       if (zombies.getCatDot) {
         const cd = zombies.getCatDot();
-        const [cx, cy] = toMM(cd.x, cd.z);
-        mctx.fillStyle = '#111318';
-        mctx.strokeStyle = cd.hunting ? '#ff9f1a' : '#7cff4d';
-        mctx.lineWidth = 1.5;
-        mctx.beginPath();
-        mctx.arc(cx, cy, 3.0, 0, Math.PI * 2);
-        mctx.fill();
-        mctx.stroke();
+        if (cd) {
+          const [cx, cy] = toMM(cd.x, cd.z);
+          mctx.fillStyle = '#050608';
+          mctx.strokeStyle = cd.hunting ? '#ff9f1a' : '#7cff4d';
+          mctx.lineWidth = 1.5;
+          mctx.beginPath();
+          mctx.arc(cx, cy, 3.0, 0, Math.PI * 2);
+          mctx.fill();
+          mctx.stroke();
+        }
+      }
+      if (zombies.getIsaDot) {
+        const idot = zombies.getIsaDot();
+        if (idot) {
+          const [ix, iy] = toMM(idot.x, idot.z);
+          mctx.fillStyle = '#ffffff';
+          mctx.strokeStyle = '#ff3b30';
+          mctx.lineWidth = 1.6;
+          mctx.beginPath();
+          mctx.arc(ix, iy, 3.8, 0, Math.PI * 2);
+          mctx.fill();
+          mctx.stroke();
+        }
       }
       if (zombies.getNoodleState) {
         const ns = zombies.getNoodleState();
@@ -713,6 +748,140 @@ window.APP = window.APP || {};
   const hitMarker = document.getElementById('hit-marker');
   const gameOverOverlay = document.getElementById('gameover-overlay');
   const gameOverStats = document.getElementById('gameover-stats');
+  const talentOverlay = document.getElementById('talent-overlay');
+  const talentTitle = document.getElementById('talent-title');
+  const talentGrid = document.getElementById('talent-grid');
+  const skillsHud = document.getElementById('skills-hud');
+  let lastTalentOpenState = false;
+
+  function renderTalentTree() {
+    if (!talentGrid || !zombies.TALENT_COLS || !zombies.TALENT_NODES) return;
+    if (talentTitle) talentTitle.textContent = `Velg ferdighet — Bølge ${zombies.game.wave}`;
+    talentGrid.innerHTML = '';
+    for (const col of zombies.TALENT_COLS) {
+      const colEl = document.createElement('div');
+      colEl.className = 'talent-col';
+      const headEl = document.createElement('div');
+      headEl.className = 'talent-col-head';
+      headEl.textContent = col.title;
+      colEl.appendChild(headEl);
+
+      const nodes = zombies.TALENT_NODES
+        .filter(n => n.col === col.id)
+        .sort((a, b) => a.row - b.row);
+
+      nodes.forEach((node, idx) => {
+        if (idx > 0) {
+          const arr = document.createElement('div');
+          arr.className = 'talent-arrow';
+          arr.textContent = '↓';
+          colEl.appendChild(arr);
+        }
+        const unlocked = zombies.isTalentUnlocked(node);
+        const curLvl = zombies.talents[node.id] || 0;
+        const isPlaceholder = node.maxLvl <= 0;
+        const isMaxed = !isPlaceholder && curLvl >= node.maxLvl;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'talent-node ' + (
+          !unlocked ? 'locked' : (isPlaceholder ? 'placeholder' : (isMaxed ? 'maxed' : 'available'))
+        );
+
+        const icons = window.TALENT_ICONS || {};
+        if (icons[node.id]) {
+          const img = document.createElement('img');
+          img.className = 'talent-icon';
+          img.src = icons[node.id];
+          img.alt = node.title;
+          btn.appendChild(img);
+        } else {
+          const ph = document.createElement('div');
+          ph.className = 'talent-icon-lock';
+          ph.textContent = '?';
+          btn.appendChild(ph);
+        }
+
+        const body = document.createElement('div');
+        body.className = 'talent-body';
+
+        const top = document.createElement('div');
+        top.className = 'talent-node-top';
+        const title = document.createElement('strong');
+        title.textContent = node.title;
+        const badge = document.createElement('span');
+        badge.className = 'talent-lvl';
+        if (!unlocked) badge.textContent = 'Låst';
+        else if (isPlaceholder) badge.textContent = 'Opplåst';
+        else badge.textContent = `${curLvl} / ${node.maxLvl}`;
+        top.appendChild(title);
+        top.appendChild(badge);
+
+        const desc = document.createElement('div');
+        desc.className = 'talent-desc';
+        desc.textContent = node.desc;
+
+        body.appendChild(top);
+        body.appendChild(desc);
+        btn.appendChild(body);
+
+        if (unlocked && !isPlaceholder && !isMaxed) {
+          btn.addEventListener('click', () => {
+            if (zombies.chooseTalent(node.id)) {
+              talentOverlay?.classList.remove('show');
+              lastTalentOpenState = false;
+            }
+          });
+        } else {
+          btn.disabled = true;
+        }
+        colEl.appendChild(btn);
+      });
+      talentGrid.appendChild(colEl);
+    }
+    if (!zombies.hasSelectableTalent()) {
+      const skipBtn = document.createElement('button');
+      skipBtn.type = 'button';
+      skipBtn.className = 'room-btn active';
+      skipBtn.textContent = `Start bølge ${zombies.game.wave}`;
+      skipBtn.addEventListener('click', () => { zombies.skipTalentIfFull(); });
+      talentGrid.appendChild(skipBtn);
+    }
+  }
+
+  function syncSkillsHud(gState) {
+    if (!skillsHud) return;
+    const t = zombies.talents || {};
+    const icons = window.TALENT_ICONS || {};
+    const iconImg = (id) => icons[id] ? `<img class="skill-chip-icon" src="${icons[id]}" alt="">` : '';
+    const chips = [];
+    if (t.spark > 0) {
+      const cd = gState.kickCooldown;
+      chips.push(`<div class="skill-chip ${cd <= 0 ? 'ready' : 'cooling'}">${iconImg('spark')}<strong>[Q] Spark (${t.spark * 2}m)</strong><span>${cd <= 0 ? 'Klar' : cd.toFixed(1) + 's'}</span></div>`);
+    }
+    if (t.armor > 0) {
+      chips.push(`<div class="skill-chip ready">${iconImg('armor')}<strong>Tykke klær</strong><span>50% skade</span></div>`);
+    }
+    if (t.taurus > 0) {
+      chips.push(`<div class="skill-chip ready">${iconImg('taurus')}<strong>Taurus</strong><span>Skade ${t.taurus}</span></div>`);
+    }
+    if (t.isa > 0) {
+      const act = gState.isaActiveT;
+      const icd = gState.isaCooldown;
+      const cls = (act > 0 || icd <= 0) ? 'ready' : 'cooling';
+      const st = act > 0 ? `Aktiv ${act.toFixed(1)}s` : (icd <= 0 ? 'Klar' : `${Math.ceil(icd)}s`);
+      chips.push(`<div class="skill-chip ${cls}">${iconImg('isa')}<strong>[C] Isa</strong><span>${st}</span></div>`);
+    }
+    if (t.grenade > 0) {
+      const gcd = gState.grenadeCooldown;
+      chips.push(`<div class="skill-chip ${gcd <= 0 ? 'ready' : 'cooling'}">${iconImg('grenade')}<strong>[G / H.klikk] Granat</strong><span>${gcd <= 0 ? 'Klar' : Math.ceil(gcd) + 's'}</span></div>`);
+    }
+    if (t.pierce > 0) {
+      chips.push(`<div class="skill-chip ready">${iconImg('pierce')}<strong>Gjennomskudd</strong><span>Aktiv</span></div>`);
+    }
+    skillsHud.innerHTML = chips.join('');
+    skillsHud.classList.toggle('has-skills', chips.length > 0);
+  }
+
   const euler = new THREE.Euler(0, 0, 0, 'YXZ');
 
   function animate() {
@@ -744,7 +913,7 @@ window.APP = window.APP || {};
 
       // WASD / Arrow movement
       let fwd = 0, str = 0, turn = 0;
-      if (!zombies.game.gameOver) {
+      if (!zombies.game.gameOver && !zombies.game.talentOpen) {
         if (keys['KeyW'] || keys['ArrowUp']) fwd += 1;
         if (keys['KeyS'] || keys['ArrowDown']) fwd -= 1;
         if (keys['KeyD']) str += 1;
@@ -844,8 +1013,9 @@ window.APP = window.APP || {};
     if (zombies.game.active) {
       const gState = zombies.game;
       const aliveCount = gState.toSpawn + (zombies.isVipPending() ? 1 : 0) + zombies.getMinimapDots().filter(d => !d.dying).length;
-      hpFill.style.width = `${gState.hp}%`;
-      hpFill.style.background = gState.hp > 50 ? '#4cd964' : (gState.hp > 25 ? '#ff9f0a' : '#ff3b30');
+      const hpPct = Math.max(0, Math.min(100, (gState.hp / (gState.maxHp || 100)) * 100));
+      hpFill.style.width = `${hpPct}%`;
+      hpFill.style.background = hpPct > 50 ? '#4cd964' : (hpPct > 25 ? '#ff9f0a' : '#ff3b30');
       hpText.textContent = Math.ceil(gState.hp);
       if (hungerFill && hungerText) {
         hungerFill.style.width = `${gState.hunger}%`;
@@ -905,10 +1075,29 @@ window.APP = window.APP || {};
       } else {
         gameOverOverlay.classList.remove('show');
       }
+      if (gState.talentOpen && !gState.gameOver) {
+        if (!lastTalentOpenState) {
+          renderTalentTree();
+          talentOverlay?.classList.add('show');
+          if (document.pointerLockElement === canvas) {
+            try { document.exitPointerLock(); } catch (_) {}
+          }
+          lastTalentOpenState = true;
+        }
+      } else {
+        if (lastTalentOpenState) {
+          talentOverlay?.classList.remove('show');
+          lastTalentOpenState = false;
+        }
+      }
+      syncSkillsHud(gState);
     } else {
       waveBanner.classList.remove('show');
       if (hwBigBanner) hwBigBanner.classList.remove('show');
       if (noodleSpinEl) noodleSpinEl.classList.remove('show');
+      if (talentOverlay) talentOverlay.classList.remove('show');
+      if (skillsHud) skillsHud.classList.remove('has-skills');
+      lastTalentOpenState = false;
       hurtVignette.style.opacity = '0';
       hitMarker.classList.remove('show');
       gameOverOverlay.classList.remove('show');

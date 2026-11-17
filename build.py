@@ -35,6 +35,15 @@ for k, fn in art_files.items():
             b64 = base64.b64encode(f.read()).decode("ascii")
         art_data[k] = f"data:image/jpeg;base64,{b64}"
 
+talent_icons = {}
+ICON_DIR = os.path.join(BASE, "talent_icons")
+for k in ("spark", "armor", "taurus", "isa", "grenade", "pierce"):
+    p = os.path.join(ICON_DIR, f"{k}.jpg")
+    if os.path.exists(p):
+        with open(p, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode("ascii")
+        talent_icons[k] = f"data:image/jpeg;base64,{b64}"
+
 js_parts = []
 for fn in ["textures.js", "architecture.js", "furniture_living.js", "furniture_rooms.js", "blaster.js", "zombies.js", "app.js"]:
     js_parts.append(f"// === {fn} ===\n" + read_txt(os.path.join(SRC, fn)))
@@ -44,6 +53,7 @@ html = (
     tpl.replace("__CSS__", css, 1)
        .replace("__THREE_JS__", three_js, 1)
        .replace("__ART_DATA__", json.dumps(art_data), 1)
+       .replace("__TALENT_ICONS__", json.dumps(talent_icons), 1)
        .replace("__APP_SCRIPTS__", app_scripts, 1)
 )
 

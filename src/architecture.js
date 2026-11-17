@@ -28,6 +28,7 @@ APP.buildArchitecture = function(scene, mats) {
     m.position.set(x + nx * offsetNormal, y, z + nz * offsetNormal);
     m.rotation.y = rotY;
     m.receiveShadow = true;
+    m.userData.noDestroy = true;
     archGroup.add(m);
   }
 
@@ -155,6 +156,7 @@ APP.buildArchitecture = function(scene, mats) {
         label: op.label || 'Skyvedør', interactMeshes: [leaf]
       };
       leaf.userData.doorRef = dRec;
+      g.traverse(ch => { if (ch.isMesh) ch.userData.noDestroy = true; });
       doors.push(dRec);
     } else {
       // Hinged door
@@ -217,6 +219,7 @@ APP.buildArchitecture = function(scene, mats) {
         isInterior: op.doorKind === 'interior'
       };
       pivot.traverse(ch => { if (ch.isMesh) ch.userData.doorRef = dRec; });
+      g.traverse(ch => { if (ch.isMesh) ch.userData.noDestroy = true; });
       doors.push(dRec);
     }
 
@@ -243,13 +246,37 @@ APP.buildArchitecture = function(scene, mats) {
     function makeBlock(s0, s1, y0, y1) {
       const bw = s1 - s0, bh = y1 - y0;
       if (bw <= 0.002 || bh <= 0.002) return;
-      const sm = (s0 + s1) / 2;
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, t), wallMats);
-      mesh.position.set(x1 + ux * sm, (y0 + y1) / 2, z1 + uz * sm);
-      mesh.rotation.y = rotY;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      archGroup.add(mesh);
+      const nx = Math.max(1, Math.round(bw / 0.42));
+      const ny = Math.max(1, Math.round(bh / 0.48));
+      const dx = bw / nx, dy = bh / ny;
+      for (let ix = 0; ix < nx; ix++) {
+        for (let iy = 0; iy < ny; iy++) {
+          const sx = s0 + (ix + 0.5) * dx;
+          const sy = y0 + (iy + 0.5) * dy;
+          const geo = new THREE.BoxGeometry(dx, dy, t);
+          if (nx > 1 || ny > 1) {
+            const uv = geo.attributes.uv;
+            const nrm = geo.attributes.normal;
+            for (let vi = 0; vi < uv.count; vi++) {
+              const nz = nrm.getZ(vi);
+              if (Math.abs(nz) > 0.5) {
+                const u = uv.getX(vi), v = uv.getY(vi);
+                const mappedU = nz > 0 ? (ix + u) / nx : (nx - 1 - ix + u) / nx;
+                uv.setXY(vi, mappedU, (iy + v) / ny);
+              }
+            }
+          }
+          const mesh = new THREE.Mesh(geo, wallMats);
+          mesh.position.set(x1 + ux * sx, sy, z1 + uz * sx);
+          mesh.rotation.y = rotY;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.userData.destructible = 'wall';
+          mesh.userData.maxHp = 3;
+          mesh.userData.hp = 3;
+          archGroup.add(mesh);
+        }
+      }
     }
 
     let cursor = 0;
@@ -527,6 +554,7 @@ APP.buildArchitecture = function(scene, mats) {
     m.rotation.x = -Math.PI / 2;
     m.position.set((x0 + x1) / 2, y, (z0 + z1) / 2);
     m.receiveShadow = true;
+    m.userData.noDestroy = true;
     archGroup.add(m);
   }
 
@@ -556,6 +584,7 @@ APP.buildArchitecture = function(scene, mats) {
   const oakMain = new THREE.Mesh(floorGeo, mats.oakFloor);
   oakMain.rotation.x = -Math.PI / 2;
   oakMain.receiveShadow = true;
+  oakMain.userData.noDestroy = true;
   archGroup.add(oakMain);
 
   // Entre dark charcoal tile overlay (Z = 6.75 .. 10.36, X = 3.22 .. 4.63)
@@ -563,6 +592,7 @@ APP.buildArchitecture = function(scene, mats) {
   // Thin aluminum transition strip at Z = 6.75
   const transStrip = new THREE.Mesh(new THREE.BoxGeometry(1.41, 0.005, 0.03), mats.chrome);
   transStrip.position.set(3.925, 0.0025, 6.75);
+  transStrip.userData.noDestroy = true;
   archGroup.add(transStrip);
 
   // Bathroom slate tile overlay (X = 0 .. 3.10, Z = 6.24 .. 8.04)
@@ -573,6 +603,7 @@ APP.buildArchitecture = function(scene, mats) {
   const ceilMesh = new THREE.Mesh(ceilGeo, mats.ceiling);
   ceilMesh.rotation.x = Math.PI / 2;
   ceilMesh.position.y = H;
+  ceilMesh.userData.noDestroy = true;
   ceilMesh.castShadow = false;
   ceilMesh.receiveShadow = false;
   ceilingGroup.add(ceilMesh);
