@@ -205,9 +205,9 @@ body.zombie-mode .crosshair {
 }
 .noodle-spin-overlay {
   display: none; position: fixed; top: 50%; left: 50%;
-  width: 190px; height: 190px; transform: translate(-50%, -50%);
+  width: 220px; height: 220px; transform: translate(-50%, -50%);
   pointer-events: none; z-index: 32;
-  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 10px 28px rgba(245, 158, 11, 0.55));
 }
 .noodle-spin-overlay.show { display: block; }
 
@@ -380,18 +380,88 @@ body.zombie-mode .skills-hud.has-skills { display: flex; }
 
   <div id="hurt-vignette"></div>
   <div id="noodle-spin-overlay" class="noodle-spin-overlay" aria-hidden="true">
-    <svg viewBox="0 0 120 120" width="190" height="190">
-      <line x1="16" y1="36" x2="106" y2="20" stroke="#d9a15b" stroke-width="5" stroke-linecap="round"/>
-      <line x1="20" y1="46" x2="108" y2="38" stroke="#c0843d" stroke-width="5" stroke-linecap="round"/>
-      <ellipse cx="60" cy="60" rx="44" ry="18" fill="#d98c2b"/>
-      <path d="M24 58 Q36 42 48 58 T72 58 T96 58" fill="none" stroke="#ffe066" stroke-width="6" stroke-linecap="round"/>
-      <path d="M28 50 Q42 36 56 50 T84 50" fill="none" stroke="#ffd23f" stroke-width="5.5" stroke-linecap="round"/>
-      <ellipse cx="42" cy="52" rx="11" ry="8" fill="#fff7dc"/>
-      <circle cx="42" cy="52" r="4.5" fill="#ff9f1a"/>
-      <circle cx="76" cy="52" r="3.5" fill="#58bd42"/>
-      <circle cx="65" cy="46" r="3" fill="#58bd42"/>
-      <path d="M14 58 C14 96, 106 96, 106 58 Z" fill="#b84028" stroke="#7d2514" stroke-width="3"/>
-      <path d="M36 92 L84 92 L78 102 L42 102 Z" fill="#8f2d1a"/>
+    <svg viewBox="0 0 220 220" width="220" height="220">
+      <defs>
+        <radialGradient id="nd-aura" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fde047" stop-opacity="0.45"/>
+          <stop offset="68%" stop-color="#f97316" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="nd-ring" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#fef08a"/>
+          <stop offset="50%" stop-color="#f59e0b"/>
+          <stop offset="100%" stop-color="#ea580c"/>
+        </linearGradient>
+        <radialGradient id="nd-bg" cx="45%" cy="38%" r="60%">
+          <stop offset="0%" stop-color="#292524"/>
+          <stop offset="100%" stop-color="#0f172a"/>
+        </radialGradient>
+        <radialGradient id="nd-broth" cx="48%" cy="42%" r="58%">
+          <stop offset="0%" stop-color="#fde047"/>
+          <stop offset="55%" stop-color="#f59e0b"/>
+          <stop offset="100%" stop-color="#b45309"/>
+        </radialGradient>
+        <linearGradient id="nd-bowl" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ef4444"/>
+          <stop offset="52%" stop-color="#b91c1c"/>
+          <stop offset="100%" stop-color="#7f1d1d"/>
+        </linearGradient>
+        <linearGradient id="nd-wood" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#f59e0b"/>
+          <stop offset="100%" stop-color="#92400e"/>
+        </linearGradient>
+      </defs>
+      <!-- Warm outer glow + circular rotating medallion -->
+      <circle cx="110" cy="110" r="106" fill="url(#nd-aura)"/>
+      <circle cx="110" cy="110" r="88" fill="url(#nd-bg)" stroke="url(#nd-ring)" stroke-width="5"/>
+      <circle cx="110" cy="110" r="80" fill="none" stroke="rgba(254,240,138,0.35)" stroke-width="1.5" stroke-dasharray="6 5"/>
+
+      <!-- Rising steam curls -->
+      <path d="M84 58 C78 46, 92 40, 86 28" fill="none" stroke="#fef9c3" stroke-width="3.5" stroke-linecap="round" opacity="0.72"/>
+      <path d="M110 52 C104 38, 120 32, 113 18" fill="none" stroke="#fef08a" stroke-width="4" stroke-linecap="round" opacity="0.82"/>
+      <path d="M138 58 C132 46, 146 40, 140 28" fill="none" stroke="#fef9c3" stroke-width="3.5" stroke-linecap="round" opacity="0.72"/>
+
+      <!-- Ramen bowl lower ceramic shell & foot -->
+      <path d="M74 157 L146 157 L140 172 L80 172 Z" fill="#7f1d1d" stroke="#450a0a" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M40 105 C40 162, 180 162, 180 105 Z" fill="url(#nd-bowl)" stroke="#450a0a" stroke-width="3"/>
+      <path d="M56 124 Q110 138 164 124" fill="none" stroke="#fbbf24" stroke-width="3" opacity="0.88" stroke-linecap="round"/>
+
+      <!-- Rim & golden broth interior -->
+      <ellipse cx="110" cy="105" rx="70" ry="26" fill="#fef3c7" stroke="#7f1d1d" stroke-width="3.5"/>
+      <ellipse cx="110" cy="107" rx="63" ry="21" fill="url(#nd-broth)"/>
+
+      <!-- Layered glossy noodles -->
+      <path d="M60 108 Q78 90 98 108 T136 106 T160 108" fill="none" stroke="#b45309" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+      <path d="M60 106 Q78 88 98 106 T136 104 T160 106" fill="none" stroke="#fef08a" stroke-width="6.5" stroke-linecap="round"/>
+      <path d="M68 114 Q90 96 112 114 T152 112" fill="none" stroke="#fde047" stroke-width="6" stroke-linecap="round"/>
+      <path d="M74 100 Q96 86 118 100 T148 98" fill="none" stroke="#fef9c3" stroke-width="4.5" stroke-linecap="round"/>
+
+      <!-- Soft-boiled Ajitsuke egg -->
+      <g transform="translate(82 99) rotate(-14)">
+        <ellipse cx="0" cy="0" rx="16" ry="11.5" fill="#fffbeb" stroke="#d97706" stroke-width="1.8"/>
+        <circle cx="1.5" cy="0.5" r="6.8" fill="#f97316"/>
+        <circle cx="0" cy="-1.5" r="2.2" fill="#fed7aa" opacity="0.8"/>
+      </g>
+
+      <!-- Narutomaki pink-swirl cake -->
+      <g transform="translate(137 101) rotate(12)">
+        <circle cx="0" cy="0" r="11" fill="#fff1f2" stroke="#f43f5e" stroke-width="1.6"/>
+        <path d="M-4 0 A4 4 0 1 1 4 0 A2.5 2.5 0 1 1 -1 0" fill="none" stroke="#fb7185" stroke-width="2.2" stroke-linecap="round"/>
+      </g>
+
+      <!-- Green scallions & sesame seeds -->
+      <circle cx="109" cy="111" r="4.2" fill="#22c55e" stroke="#14532d" stroke-width="1.2"/>
+      <circle cx="119" cy="96" r="3.8" fill="#4ade80" stroke="#14532d" stroke-width="1.2"/>
+      <circle cx="127" cy="112" r="3.5" fill="#22c55e" stroke="#14532d" stroke-width="1.2"/>
+      <circle cx="98" cy="91" r="1.4" fill="#fef9c3"/>
+      <circle cx="114" cy="90" r="1.4" fill="#fef9c3"/>
+
+      <!-- Lifted noodle strands + angled wooden chopsticks -->
+      <path d="M102 102 C100 84, 108 72, 106 58" fill="none" stroke="#fef08a" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M108 104 C107 84, 114 70, 112 56" fill="none" stroke="#fde047" stroke-width="4.2" stroke-linecap="round"/>
+      <path d="M114 102 C113 84, 119 72, 117 58" fill="none" stroke="#fef9c3" stroke-width="3.6" stroke-linecap="round"/>
+      <polygon points="90,62 174,36 176,43 91,67" fill="url(#nd-wood)" stroke="#451a03" stroke-width="1.4"/>
+      <polygon points="92,70 178,52 179,59 93,75" fill="url(#nd-wood)" stroke="#451a03" stroke-width="1.4"/>
     </svg>
   </div>
   <div class="crosshair"><div id="hit-marker"></div></div>
@@ -976,6 +1046,24 @@ APP.buildArchitecture = function(scene, mats) {
   const blindSlats = [];    // Individual vertical blind slats zombies can smash through
   const exteriorWallRefs = [];
 
+  // Shared vertical-blind slat textile material with crisp edge borders so slats never blend into a flat curtain
+  const lamellMat = (() => {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 8;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#f5f3ed';
+    ctx.fillRect(0, 0, 64, 8);
+    ctx.fillStyle = '#d3d0c7';
+    ctx.fillRect(0, 0, 5, 8);
+    ctx.fillRect(59, 0, 5, 8);
+    ctx.fillStyle = '#e7e4dc';
+    ctx.fillRect(5, 0, 3, 8);
+    ctx.fillRect(56, 0, 3, 8);
+    const tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.80, metalness: 0.0, envMapIntensity: 0.35 });
+  })();
+
   // Helper: add wall collision box (axis-aligned or angled capsule-line) in scaled world coords
   function addSegmentCollider(x1, z1, x2, z2, halfThick, isWindowWall = false) {
     colliders.push({ kind: 'seg', x1: x1 * S, z1: z1 * S, x2: x2 * S, z2: z2 * S, pad: halfThick * S, enabled: true, isWindowWall });
@@ -1067,33 +1155,42 @@ APP.buildArchitecture = function(scene, mats) {
       g.add(blind);
     }
 
-    // White vertical blinds (lamellgardiner) spanning full height & just past sill
+    // White vertical blinds (lameller) spanning headrail down past sill with visible angled ribs & weights
     if (opts.verticalBlinds) {
       const sgn = opts.inSign || 1;
       const trackW = len + 0.06;
-      const track = new THREE.Mesh(new THREE.BoxGeometry(trackW, 0.032, 0.048), mats.trimWhite);
-      track.position.set(0, y1 + 0.02, sgn * (t / 2 + 0.035));
+      const track = new THREE.Mesh(new THREE.BoxGeometry(trackW, 0.036, 0.052), mats.trimWhite);
+      track.position.set(0, y1 + 0.025, sgn * (t / 2 + 0.038));
       track.userData.noDestroy = true;
       g.add(track);
-      const slatTop = y1 + 0.005;
-      const slatBot = Math.max(0.66, y0 - 0.16);
+      const railSlot = new THREE.Mesh(new THREE.BoxGeometry(trackW - 0.02, 0.008, 0.014), mats.darkMetal);
+      railSlot.position.set(0, y1 + 0.005, sgn * (t / 2 + 0.044));
+      railSlot.userData.noDestroy = true;
+      g.add(railSlot);
+
+      const slatTop = y1 + 0.006;
+      const slatBot = Math.max(0.76, y0 - 0.09);
       const slatH = slatTop - slatBot;
       const isOpenBlinds = opts.verticalBlinds === 'open';
-      const slatW = isOpenBlinds ? 0.095 : 0.105;
-      const count = Math.max(4, Math.floor((trackW - 0.04) / 0.076));
+      const slatW = 0.084;
+      const count = Math.max(5, Math.floor((trackW - 0.04) / 0.086));
       const step = (trackW - 0.06) / Math.max(1, count - 1);
-      const slatAngle = isOpenBlinds ? 0.92 : 0.14;
-      const slatMat = mats.ceramicWhite;
+      // Angled slats leave distinct thin vertical gaps/shadow seams even on the wider window
+      const slatAngle = isOpenBlinds ? 1.05 : 0.48;
       const cosR = Math.cos(rotY), sinR = Math.sin(rotY);
-      const sz = sgn * (t / 2 + 0.042);
+      const sz = sgn * (t / 2 + 0.044);
       for (let i = 0; i < count; i++) {
         const sx = -trackW / 2 + 0.03 + i * step;
-        const slat = new THREE.Mesh(new THREE.BoxGeometry(slatW, slatH, 0.004), slatMat);
+        const slat = new THREE.Mesh(new THREE.BoxGeometry(slatW, slatH, 0.004), lamellMat);
         slat.position.set(sx, slatBot + slatH / 2, sz);
         slat.rotation.y = slatAngle;
         slat.castShadow = true;
         slat.receiveShadow = true;
         slat.userData.noDestroy = true;
+        const weight = new THREE.Mesh(new THREE.BoxGeometry(slatW * 0.96, 0.018, 0.009), mats.trimWhite);
+        weight.position.y = -slatH / 2 + 0.009;
+        weight.userData.noDestroy = true;
+        slat.add(weight);
         g.add(slat);
         blindSlats.push({
           mesh: slat,
@@ -4031,7 +4128,7 @@ APP.createBlasterSystem = function(scene, camera, arch) {
 // Minecraft Zombie Horde, Window/Door Breaching, BFS Room Pathfinding & Wave Manager
 window.APP = window.APP || {};
 
-APP.createZombieSystem = function(scene, arch, blaster) {
+APP.createZombieSystem = function(scene, arch, blaster, camera) {
   const S = APP.XZ || 1;
   // ==================== PIXEL-ART MINECRAFT ZOMBIE TEXTURES ====================
   function makePixelTex(drawFn, size = 16) {
@@ -4368,6 +4465,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       speechBubble.position.set(0, 2.02, 0);
       speechBubble.scale.set(1.56, 0.39, 1);
       speechBubble.renderOrder = 12;
+      speechBubble.visible = false; // Shown the instant she becomes visible to the player
 
       root.add(legL, legR, torso, belt, skirt, head, hairBack, hairCrown, hairLockL, hairLockR, armL, armR, speechBubble);
       return { root, legL, legR, armL, armR, head, torso, flashMats, speechBubble };
@@ -5079,7 +5177,8 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       knockVz: 0,
       knockT: 0,
       knockWallDmg: false,
-      fireT: 0
+      fireT: 0,
+      vipSpoke: false
     });
   }
 
@@ -6009,9 +6108,40 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       }
     }
 
+    const losRaycaster = new THREE.Raycaster();
+    const camFwd = new THREE.Vector3();
+    const vipVec = new THREE.Vector3();
     for (let i = zombies.length - 1; i >= 0; i--) {
       const z = zombies[i];
       const pos = z.rig.root.position;
+      // Show blonde zombie's speech bubble the instant she enters unobstructed player view
+      if (z.rig.speechBubble && !z.vipSpoke && z.phase !== 'dying') {
+        vipVec.set(pos.x - playerPos.x, 1.38 - playerPos.y, pos.z - playerPos.z);
+        const dVip = vipVec.length();
+        if (dVip > 0.05 && dVip < 18.0) {
+          vipVec.divideScalar(dVip);
+          let inView = true;
+          if (camera) {
+            camera.getWorldDirection(camFwd);
+            inView = camFwd.dot(vipVec) > 0.35;
+          }
+          if (inView) {
+            losRaycaster.set(playerPos, vipVec);
+            losRaycaster.far = Math.max(0.1, dVip - 0.35);
+            const hits = losRaycaster.intersectObjects(arch.archGroup.children, true);
+            const blocked = hits.some(h => {
+              const hm = h.object && h.object.material;
+              if (!hm) return false;
+              return !(Array.isArray(hm) ? hm.every(m => m && m.transparent) : hm.transparent);
+            });
+            if (!blocked) {
+              z.vipSpoke = true;
+              z.rig.speechBubble.visible = true;
+              blaster.sfx.groan();
+            }
+          }
+        }
+      }
 
       // Fireball burn glow & hit flash tint management
       if (z.fireT > 0) {
@@ -6391,7 +6521,7 @@ window.APP = window.APP || {};
   APP.furnishLivingAndKitchen(scene, mats, arch);
   const ext = APP.furnishOtherRoomsAndExterior(scene, mats, arch);
   const blaster = APP.createBlasterSystem(scene, camera, arch);
-  const zombies = APP.createZombieSystem(scene, arch, blaster);
+  const zombies = APP.createZombieSystem(scene, arch, blaster, camera);
   let curLightMood = 'sun';
 
   // ==================== LIGHTING RIG ====================
@@ -7472,9 +7602,11 @@ window.APP = window.APP || {};
         if (gState.noodleFxT > 0) {
           const p = gState.noodleFxT;
           noodleSpinEl.classList.add('show');
-          noodleSpinEl.style.transform = `translate(-50%, -50%) rotate(${(1 - p) * 540}deg) scale(${0.65 + Math.sin(p * Math.PI) * 0.65})`;
+          noodleSpinEl.style.opacity = Math.min(1, p * 4, (1 - p) * 6).toFixed(2);
+          noodleSpinEl.style.transform = `translate(-50%, -50%) rotate(${(1 - p) * 720}deg) scale(${0.70 + Math.sin(p * Math.PI) * 0.55})`;
         } else {
           noodleSpinEl.classList.remove('show');
+          noodleSpinEl.style.opacity = '0';
         }
       }
       hitMarker.classList.toggle('show', gState.hitMarkerT > 0);

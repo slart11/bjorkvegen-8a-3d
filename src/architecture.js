@@ -14,6 +14,24 @@ APP.buildArchitecture = function(scene, mats) {
   const blindSlats = [];    // Individual vertical blind slats zombies can smash through
   const exteriorWallRefs = [];
 
+  // Shared vertical-blind slat textile material with crisp edge borders so slats never blend into a flat curtain
+  const lamellMat = (() => {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 8;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#f5f3ed';
+    ctx.fillRect(0, 0, 64, 8);
+    ctx.fillStyle = '#d3d0c7';
+    ctx.fillRect(0, 0, 5, 8);
+    ctx.fillRect(59, 0, 5, 8);
+    ctx.fillStyle = '#e7e4dc';
+    ctx.fillRect(5, 0, 3, 8);
+    ctx.fillRect(56, 0, 3, 8);
+    const tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.80, metalness: 0.0, envMapIntensity: 0.35 });
+  })();
+
   // Helper: add wall collision box (axis-aligned or angled capsule-line) in scaled world coords
   function addSegmentCollider(x1, z1, x2, z2, halfThick, isWindowWall = false) {
     colliders.push({ kind: 'seg', x1: x1 * S, z1: z1 * S, x2: x2 * S, z2: z2 * S, pad: halfThick * S, enabled: true, isWindowWall });
@@ -105,33 +123,42 @@ APP.buildArchitecture = function(scene, mats) {
       g.add(blind);
     }
 
-    // White vertical blinds (lamellgardiner) spanning full height & just past sill
+    // White vertical blinds (lameller) spanning headrail down past sill with visible angled ribs & weights
     if (opts.verticalBlinds) {
       const sgn = opts.inSign || 1;
       const trackW = len + 0.06;
-      const track = new THREE.Mesh(new THREE.BoxGeometry(trackW, 0.032, 0.048), mats.trimWhite);
-      track.position.set(0, y1 + 0.02, sgn * (t / 2 + 0.035));
+      const track = new THREE.Mesh(new THREE.BoxGeometry(trackW, 0.036, 0.052), mats.trimWhite);
+      track.position.set(0, y1 + 0.025, sgn * (t / 2 + 0.038));
       track.userData.noDestroy = true;
       g.add(track);
-      const slatTop = y1 + 0.005;
-      const slatBot = Math.max(0.66, y0 - 0.16);
+      const railSlot = new THREE.Mesh(new THREE.BoxGeometry(trackW - 0.02, 0.008, 0.014), mats.darkMetal);
+      railSlot.position.set(0, y1 + 0.005, sgn * (t / 2 + 0.044));
+      railSlot.userData.noDestroy = true;
+      g.add(railSlot);
+
+      const slatTop = y1 + 0.006;
+      const slatBot = Math.max(0.76, y0 - 0.09);
       const slatH = slatTop - slatBot;
       const isOpenBlinds = opts.verticalBlinds === 'open';
-      const slatW = isOpenBlinds ? 0.095 : 0.105;
-      const count = Math.max(4, Math.floor((trackW - 0.04) / 0.076));
+      const slatW = 0.084;
+      const count = Math.max(5, Math.floor((trackW - 0.04) / 0.086));
       const step = (trackW - 0.06) / Math.max(1, count - 1);
-      const slatAngle = isOpenBlinds ? 0.92 : 0.14;
-      const slatMat = mats.ceramicWhite;
+      // Angled slats leave distinct thin vertical gaps/shadow seams even on the wider window
+      const slatAngle = isOpenBlinds ? 1.05 : 0.48;
       const cosR = Math.cos(rotY), sinR = Math.sin(rotY);
-      const sz = sgn * (t / 2 + 0.042);
+      const sz = sgn * (t / 2 + 0.044);
       for (let i = 0; i < count; i++) {
         const sx = -trackW / 2 + 0.03 + i * step;
-        const slat = new THREE.Mesh(new THREE.BoxGeometry(slatW, slatH, 0.004), slatMat);
+        const slat = new THREE.Mesh(new THREE.BoxGeometry(slatW, slatH, 0.004), lamellMat);
         slat.position.set(sx, slatBot + slatH / 2, sz);
         slat.rotation.y = slatAngle;
         slat.castShadow = true;
         slat.receiveShadow = true;
         slat.userData.noDestroy = true;
+        const weight = new THREE.Mesh(new THREE.BoxGeometry(slatW * 0.96, 0.018, 0.009), mats.trimWhite);
+        weight.position.y = -slatH / 2 + 0.009;
+        weight.userData.noDestroy = true;
+        slat.add(weight);
         g.add(slat);
         blindSlats.push({
           mesh: slat,

@@ -1,7 +1,7 @@
 // Minecraft Zombie Horde, Window/Door Breaching, BFS Room Pathfinding & Wave Manager
 window.APP = window.APP || {};
 
-APP.createZombieSystem = function(scene, arch, blaster) {
+APP.createZombieSystem = function(scene, arch, blaster, camera) {
   const S = APP.XZ || 1;
   // ==================== PIXEL-ART MINECRAFT ZOMBIE TEXTURES ====================
   function makePixelTex(drawFn, size = 16) {
@@ -338,6 +338,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       speechBubble.position.set(0, 2.02, 0);
       speechBubble.scale.set(1.56, 0.39, 1);
       speechBubble.renderOrder = 12;
+      speechBubble.visible = false; // Shown the instant she becomes visible to the player
 
       root.add(legL, legR, torso, belt, skirt, head, hairBack, hairCrown, hairLockL, hairLockR, armL, armR, speechBubble);
       return { root, legL, legR, armL, armR, head, torso, flashMats, speechBubble };
@@ -1049,7 +1050,8 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       knockVz: 0,
       knockT: 0,
       knockWallDmg: false,
-      fireT: 0
+      fireT: 0,
+      vipSpoke: false
     });
   }
 
@@ -1979,9 +1981,40 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       }
     }
 
+    const losRaycaster = new THREE.Raycaster();
+    const camFwd = new THREE.Vector3();
+    const vipVec = new THREE.Vector3();
     for (let i = zombies.length - 1; i >= 0; i--) {
       const z = zombies[i];
       const pos = z.rig.root.position;
+      // Show blonde zombie's speech bubble the instant she enters unobstructed player view
+      if (z.rig.speechBubble && !z.vipSpoke && z.phase !== 'dying') {
+        vipVec.set(pos.x - playerPos.x, 1.38 - playerPos.y, pos.z - playerPos.z);
+        const dVip = vipVec.length();
+        if (dVip > 0.05 && dVip < 18.0) {
+          vipVec.divideScalar(dVip);
+          let inView = true;
+          if (camera) {
+            camera.getWorldDirection(camFwd);
+            inView = camFwd.dot(vipVec) > 0.35;
+          }
+          if (inView) {
+            losRaycaster.set(playerPos, vipVec);
+            losRaycaster.far = Math.max(0.1, dVip - 0.35);
+            const hits = losRaycaster.intersectObjects(arch.archGroup.children, true);
+            const blocked = hits.some(h => {
+              const hm = h.object && h.object.material;
+              if (!hm) return false;
+              return !(Array.isArray(hm) ? hm.every(m => m && m.transparent) : hm.transparent);
+            });
+            if (!blocked) {
+              z.vipSpoke = true;
+              z.rig.speechBubble.visible = true;
+              blaster.sfx.groan();
+            }
+          }
+        }
+      }
 
       // Fireball burn glow & hit flash tint management
       if (z.fireT > 0) {

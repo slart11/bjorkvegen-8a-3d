@@ -51,7 +51,7 @@ window.APP = window.APP || {};
   APP.furnishLivingAndKitchen(scene, mats, arch);
   const ext = APP.furnishOtherRoomsAndExterior(scene, mats, arch);
   const blaster = APP.createBlasterSystem(scene, camera, arch);
-  const zombies = APP.createZombieSystem(scene, arch, blaster);
+  const zombies = APP.createZombieSystem(scene, arch, blaster, camera);
   let curLightMood = 'sun';
 
   // ==================== LIGHTING RIG ====================
@@ -1132,9 +1132,11 @@ window.APP = window.APP || {};
         if (gState.noodleFxT > 0) {
           const p = gState.noodleFxT;
           noodleSpinEl.classList.add('show');
-          noodleSpinEl.style.transform = `translate(-50%, -50%) rotate(${(1 - p) * 540}deg) scale(${0.65 + Math.sin(p * Math.PI) * 0.65})`;
+          noodleSpinEl.style.opacity = Math.min(1, p * 4, (1 - p) * 6).toFixed(2);
+          noodleSpinEl.style.transform = `translate(-50%, -50%) rotate(${(1 - p) * 720}deg) scale(${0.70 + Math.sin(p * Math.PI) * 0.55})`;
         } else {
           noodleSpinEl.classList.remove('show');
+          noodleSpinEl.style.opacity = '0';
         }
       }
       hitMarker.classList.toggle('show', gState.hitMarkerT > 0);
