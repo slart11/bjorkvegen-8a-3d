@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bjørkvegen 8A — Interaktiv 3D-modell (Charlottenlund)</title>
+  <title>Zombieangrep</title>
   <style>:root {
   --bg: rgba(18, 22, 28, 0.78);
   --bg-hover: rgba(34, 42, 54, 0.9);
@@ -411,7 +411,7 @@ body.zombie-mode .skills-hud.has-skills { display: flex; }
     <div class="panel brand">
       <div class="brand-dot"></div>
       <div>
-        <h1>Bjørkvegen 8A — Zombie-forsvar</h1>
+        <h1>Zombieangrep</h1>
         <div class="sub">X-Shot Insanity</div>
       </div>
     </div>
@@ -2561,7 +2561,7 @@ APP.furnishLivingAndKitchen = function(scene, mats, arch) {
 
 
 // === furniture_rooms.js ===
-// Entre, Bad, 3 Bedrooms, Bod, Terrace (21 m2) & Charlottenlund Exterior
+// Entre, Bad, 3 Bedrooms, Bod, Terrace (21 m2) & Exterior
 window.APP = window.APP || {};
 
 APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
@@ -4502,7 +4502,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     return [];
   }
 
-  // All real windows and exterior doors around Bjørkvegen 8A
+  // All real windows and exterior doors around the house
   const BREACH_PORTALS = [
     {
       name: 'Stue østvindu', isWindow: true, roomNode: 'stue',

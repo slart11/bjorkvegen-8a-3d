@@ -472,7 +472,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     return [];
   }
 
-  // All real windows and exterior doors around Bjørkvegen 8A
+  // All real windows and exterior doors around the house
   const BREACH_PORTALS = [
     {
       name: 'Stue østvindu', isWindow: true, roomNode: 'stue',

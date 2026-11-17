@@ -1,4 +1,4 @@
-// Entre, Bad, 3 Bedrooms, Bod, Terrace (21 m2) & Charlottenlund Exterior
+// Entre, Bad, 3 Bedrooms, Bod, Terrace (21 m2) & Exterior
 window.APP = window.APP || {};
 
 APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
