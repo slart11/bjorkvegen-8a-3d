@@ -638,7 +638,7 @@ window.APP = window.APP || {};
     mctx.arc(px, py, 4.2, 0, Math.PI * 2);
     mctx.fill();
 
-    // Live Minecraft Zombie dots on minimap
+    // Live Minecraft Zombie dots + Immortal Black Cat companion on minimap
     if (zombies.game.active) {
       for (const zd of zombies.getMinimapDots()) {
         if (zd.dying) continue;
@@ -648,6 +648,17 @@ window.APP = window.APP || {};
         mctx.lineWidth = 1.3;
         mctx.beginPath();
         mctx.arc(zx, zy, 3.3, 0, Math.PI * 2);
+        mctx.fill();
+        mctx.stroke();
+      }
+      if (zombies.getCatDot) {
+        const cd = zombies.getCatDot();
+        const [cx, cy] = toMM(cd.x, cd.z);
+        mctx.fillStyle = '#111318';
+        mctx.strokeStyle = cd.hunting ? '#ff9f1a' : '#7cff4d';
+        mctx.lineWidth = 1.5;
+        mctx.beginPath();
+        mctx.arc(cx, cy, 3.0, 0, Math.PI * 2);
         mctx.fill();
         mctx.stroke();
       }

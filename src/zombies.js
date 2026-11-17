@@ -534,6 +534,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
 
   function resetGame() {
     clearZombies();
+    resetCat();
     game.hp = 100;
     game.score = 0;
     game.kills = 0;
@@ -549,6 +550,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   function setGameActive(flag) {
     game.active = flag;
     blaster.setVisible(flag);
+    cat.rig.root.visible = flag;
     ammoPickups.forEach(p => { p.mesh.visible = flag && p.active; });
     if (!flag) {
       clearZombies();
@@ -673,6 +675,218 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     }
   }
 
+  // ==================== IMMORTAL BLACK CAT COMPANION ====================
+  function createBlackCatMesh() {
+    const matFur = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.78 });
+    const matEarIn = new THREE.MeshStandardMaterial({ color: 0xd97d95, roughness: 0.68 });
+    const matEye = new THREE.MeshBasicMaterial({ color: 0x7cff4d });
+    const matPupil = new THREE.MeshBasicMaterial({ color: 0x090b08 });
+    const matNose = new THREE.MeshStandardMaterial({ color: 0xe6849a, roughness: 0.6 });
+    const matCollar = new THREE.MeshStandardMaterial({ color: 0xff9f1a, emissive: 0x4d2800, roughness: 0.35 });
+
+    const root = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.36), matFur);
+    body.position.set(0, 0.20, 0);
+    body.castShadow = true; body.receiveShadow = true;
+    root.add(body);
+
+    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.195, 0.045, 0.06), matCollar);
+    collar.position.set(0, 0.235, 0.145);
+    root.add(collar);
+
+    const head = new THREE.Group();
+    head.position.set(0, 0.285, 0.21);
+    const skull = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.14, 0.16), matFur);
+    skull.position.set(0, 0, 0.03);
+    skull.castShadow = true;
+    head.add(skull);
+
+    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.055, 0.04), matFur);
+    snout.position.set(0, -0.025, 0.115);
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, 0.015), matNose);
+    nose.position.set(0, -0.008, 0.138);
+    head.add(snout, nose);
+
+    const earGeo = new THREE.BoxGeometry(0.042, 0.06, 0.03);
+    const earInGeo = new THREE.BoxGeometry(0.024, 0.036, 0.012);
+    [-1, 1].forEach(s => {
+      const ear = new THREE.Mesh(earGeo, matFur);
+      ear.position.set(s * 0.055, 0.095, 0.01);
+      const earIn = new THREE.Mesh(earInGeo, matEarIn);
+      earIn.position.set(s * 0.055, 0.09, 0.023);
+      const eye = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.026, 0.01), matEye);
+      eye.position.set(s * 0.044, 0.018, 0.112);
+      const pupil = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.022, 0.012), matPupil);
+      pupil.position.set(s * 0.044, 0.018, 0.115);
+      head.add(ear, earIn, eye, pupil);
+    });
+    root.add(head);
+
+    function makeCatLeg(x, z) {
+      const piv = new THREE.Group();
+      piv.position.set(x, 0.14, z);
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.14, 0.052), matFur);
+      m.position.y = -0.07;
+      m.castShadow = true;
+      piv.add(m);
+      root.add(piv);
+      return piv;
+    }
+    const legFL = makeCatLeg(-0.055, 0.12);
+    const legFR = makeCatLeg(0.055, 0.12);
+    const legBL = makeCatLeg(-0.055, -0.12);
+    const legBR = makeCatLeg(0.055, -0.12);
+
+    const tailPiv = new THREE.Group();
+    tailPiv.position.set(0, 0.24, -0.17);
+    const tailBase = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.18), matFur);
+    tailBase.position.set(0, 0.04, -0.07);
+    tailBase.rotation.x = 0.55;
+    const tailTip = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.036, 0.14), matFur);
+    tailTip.position.set(0, 0.12, -0.15);
+    tailTip.rotation.x = 1.05;
+    tailPiv.add(tailBase, tailTip);
+    root.add(tailPiv);
+
+    scene.add(root);
+    return { root, head, legFL, legFR, legBL, legBR, tailPiv };
+  }
+
+  const catRig = createBlackCatMesh();
+  const cat = {
+    rig: catRig,
+    target: null,
+    biteCooldown: 0,
+    lungeT: 0,
+    walkCycle: 0,
+    speed: 3.25
+  };
+
+  function resetCat() {
+    cat.target = null;
+    cat.biteCooldown = 0;
+    cat.lungeT = 0;
+    cat.walkCycle = 0;
+    cat.rig.root.position.set(4.80, 0, 4.10);
+    cat.rig.root.rotation.set(0, 0, 0);
+    cat.rig.root.visible = game.active;
+  }
+
+  function setCatTarget(zombie) {
+    if (!zombie || zombie.phase === 'dying') return;
+    cat.target = zombie;
+  }
+
+  function isCatTargetAlive(z) {
+    return z && z.phase !== 'dying' && zombies.includes(z);
+  }
+
+  function updateCat(dt, playerPos, playerRoom) {
+    cat.rig.root.visible = game.active;
+    if (!game.active) return;
+    if (cat.biteCooldown > 0) cat.biteCooldown = Math.max(0, cat.biteCooldown - dt);
+    if (cat.lungeT > 0) cat.lungeT = Math.max(0, cat.lungeT - dt);
+
+    if (cat.target && !isCatTargetAlive(cat.target)) {
+      cat.target = null;
+    }
+
+    const cPos = cat.rig.root.position;
+    const hunting = !!cat.target;
+    let tx = playerPos.x + 0.95;
+    let tz = playerPos.z - 0.55;
+    let stopDist = 0.35;
+
+    if (hunting) {
+      const tPos = cat.target.rig.root.position;
+      const catRoom = nearestNode(cPos.x, cPos.z);
+      const tRoom = nearestNode(tPos.x, tPos.z);
+      if (catRoom !== tRoom) {
+        const path = findPathNodes(catRoom, tRoom);
+        if (path.length >= 2) {
+          const portalPt = getPortalTarget(path[0], path[1], cPos);
+          tx = portalPt[0]; tz = portalPt[1];
+        } else {
+          tx = tPos.x; tz = tPos.z;
+        }
+      } else {
+        tx = tPos.x; tz = tPos.z;
+      }
+      stopDist = 0.62;
+      openDoorIfNear(cPos.x, cPos.z, null);
+    } else {
+      const catRoom = nearestNode(cPos.x, cPos.z);
+      if (catRoom !== playerRoom) {
+        const path = findPathNodes(catRoom, playerRoom);
+        if (path.length >= 2) {
+          const portalPt = getPortalTarget(path[0], path[1], cPos);
+          tx = portalPt[0]; tz = portalPt[1];
+          stopDist = 0.08;
+        }
+      }
+      openDoorIfNear(cPos.x, cPos.z, null);
+    }
+
+    const dx = tx - cPos.x, dz = tz - cPos.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist > 0.08) {
+      cat.rig.root.rotation.y = Math.atan2(dx, dz);
+    }
+
+    let moving = false;
+    if (dist > stopDist) {
+      moving = true;
+      const moveSpeed = hunting ? cat.speed : 2.35;
+      const step = Math.min(dist - stopDist, moveSpeed * dt);
+      cPos.x += (dx / dist) * step;
+      cPos.z += (dz / dist) * step;
+      resolveZombieCollisions(cPos, 0.11);
+    }
+
+    // Bite & deal damage to shot target zombie (immortal cat cannot be harmed)
+    if (hunting) {
+      const tPos = cat.target.rig.root.position;
+      const distToTarget = Math.hypot(tPos.x - cPos.x, tPos.z - cPos.z);
+      if (distToTarget <= 0.92 && cat.biteCooldown <= 0) {
+        const z = cat.target;
+        cat.biteCooldown = 0.65;
+        cat.lungeT = 0.22;
+        z.hp -= 2;
+        z.flashT = 0.14;
+        z.rig.flashMats.forEach(m => m.emissive.setHex(0x881111));
+        if (blaster.sfx.catBite) blaster.sfx.catBite();
+        else blaster.sfx.hit(false);
+        spawnBurst(tPos.x, 0.65, tPos.z, orangeSparkMat, 6, 3.0, 0.042);
+        game.hitMarkerT = 0.16;
+        game.hitWasHead = false;
+        if (z.hp <= 0) {
+          z.phase = 'dying';
+          z.deathT = 0.75;
+          game.kills++;
+          game.score += 100;
+          cat.target = null;
+        }
+      }
+    }
+
+    const floorY = (cPos.x > 10.05 || cPos.z < -0.78 || cPos.z > 10.60 || cPos.x < -0.15) ? -0.16 : 0;
+    const lungeY = cat.lungeT > 0 ? Math.sin((cat.lungeT / 0.22) * Math.PI) * 0.24 : 0;
+    cPos.y += ((floorY + lungeY) - cPos.y) * Math.min(1, dt * 16);
+
+    cat.walkCycle += dt * (moving ? (hunting ? 15 : 10) : 2.8);
+    const swing = moving ? Math.sin(cat.walkCycle) * 0.75 : 0;
+    cat.rig.legFL.rotation.x = swing;
+    cat.rig.legBR.rotation.x = swing;
+    cat.rig.legFR.rotation.x = -swing;
+    cat.rig.legBL.rotation.x = -swing;
+    cat.rig.head.rotation.x = cat.lungeT > 0 ? -0.35 : Math.sin(cat.walkCycle * 0.5) * 0.05;
+    cat.rig.tailPiv.rotation.y = Math.sin(cat.walkCycle * 0.7) * 0.35;
+  }
+
+  function getCatDot() {
+    return { x: cat.rig.root.position.x, z: cat.rig.root.position.z, hunting: !!cat.target };
+  }
+
   // ==================== DART HIT DETECTION ====================
   const hitRay = new THREE.Ray();
   const hitHeadBox = new THREE.Box3();
@@ -730,6 +944,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     if (!bestHit) return null;
 
     const { z, isHead, pt, box } = bestHit;
+    setCatTarget(z);
     const p = z.rig.root.position;
     const dmg = isHead ? 2 : 1;
     z.hp -= dmg;
@@ -1028,6 +1243,8 @@ APP.createZombieSystem = function(scene, arch, blaster) {
         }
       }
     }
+
+    updateCat(dt, playerPos, playerRoom);
   }
 
   function getMinimapDots() {
@@ -1037,5 +1254,5 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   // Start Wave 1 immediately!
   resetGame();
 
-  return { game, resetGame, setGameActive, raycastZombie, checkDartHit, update, getMinimapDots, isVipPending: () => vipPending };
+  return { game, resetGame, setGameActive, raycastZombie, checkDartHit, setCatTarget, update, getMinimapDots, getCatDot, isVipPending: () => vipPending };
 };

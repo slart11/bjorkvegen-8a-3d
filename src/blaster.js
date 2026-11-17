@@ -86,6 +86,11 @@ APP.createBlasterSystem = function(scene, camera, arch) {
     wave() {
       playTone('triangle', 440, 660, 0.14, 0.14);
       setTimeout(() => playTone('triangle', 554, 880, 0.22, 0.16), 140);
+    },
+    catBite() {
+      // Sharp cat hiss/meow + snappy bite chomp
+      playTone('triangle', 860, 520, 0.11, 0.14);
+      playNoise(0.08, 2200, 1.5, 0.14, true);
     }
   };
 
@@ -413,6 +418,13 @@ APP.createBlasterSystem = function(scene, camera, arch) {
 
     const wHits = aimRaycaster.intersectObjects(bounceMeshes, false);
     if (wHits.length && wHits[0].distance < targetDist) targetDist = wHits[0].distance;
+
+    // Sic the immortal black cat onto whatever visible zombie the player shoots at
+    if (zHit && zHit.zombie && zombiesApi && zombiesApi.setCatTarget) {
+      if (!wHits.length || zHit.dist <= wHits[0].distance + 0.15) {
+        zombiesApi.setCatTarget(zHit.zombie);
+      }
+    }
 
     const aimTarget = aimRaycaster.ray.origin.clone().addScaledVector(aimRaycaster.ray.direction, targetDist);
     muzzleBore.getWorldPosition(muzzleWorld);
