@@ -222,61 +222,54 @@ APP.furnishOtherRoomsAndExterior = function(scene, mats, arch) {
   g.add(mRug);
 
   // ==================== 4. SOVEROM 2 (6,5 m² SV) ====================
-  // Light grey fabric sofa-bed along South wall (X = 0.70..2.68, Z = 9.44..10.34)
-  const swBase = new THREE.Mesh(APP.makeRoundedBox(1.96, 0.36, 0.88, 0.03, 2), mats.sofaGrey);
-  swBase.position.set(1.69, 0.21, 9.90);
-  swBase.castShadow = true; swBase.receiveShadow = true;
-  const swBack = new THREE.Mesh(APP.makeRoundedBox(1.96, 0.44, 0.16, 0.03, 2), mats.sofaGrey);
-  swBack.position.set(1.69, 0.56, 10.26);
-  for (const ax of [0.76, 2.62]) {
-    const arm = new THREE.Mesh(APP.makeRoundedBox(0.12, 0.32, 0.88, 0.03, 2), mats.sofaGrey);
-    arm.position.set(ax, 0.44, 9.90);
-    g.add(arm);
-  }
-  const swPil1 = new THREE.Mesh(APP.makeRoundedBox(0.38, 0.36, 0.12, 0.03, 2), mats.rugCream);
-  swPil1.position.set(1.12, 0.55, 10.06); swPil1.rotation.y = 0.25;
-  const swPil2 = new THREE.Mesh(APP.makeRoundedBox(0.38, 0.36, 0.12, 0.03, 2), mats.sofaOlive);
-  swPil2.position.set(1.44, 0.55, 10.04); swPil2.rotation.y = -0.15;
-  g.add(swBase, swBack, swPil1, swPil2);
-  arch.addBoxCollider(1.69, 9.90, 1.98, 0.92);
+  // Single bed positioned directly underneath the West window (X = 0.06..1.02, Z = 8.35..10.29)
+  const swBedFrame = new THREE.Mesh(APP.makeRoundedBox(0.96, 0.34, 1.94, 0.03, 2), mats.oakFurniture);
+  swBedFrame.position.set(0.54, 0.19, 9.32);
+  swBedFrame.castShadow = true; swBedFrame.receiveShadow = true;
+  const swMattress = new THREE.Mesh(APP.makeRoundedBox(0.92, 0.14, 1.88, 0.03, 2), mats.ceramicWhite);
+  swMattress.position.set(0.54, 0.38, 9.32);
+  const swDuvet = new THREE.Mesh(APP.makeRoundedBox(0.96, 0.14, 1.42, 0.04, 3), mats.rugTaupe);
+  swDuvet.position.set(0.54, 0.46, 9.08);
+  swDuvet.castShadow = true;
+  const swThrow = new THREE.Mesh(APP.makeRoundedBox(0.98, 0.04, 0.45, 0.02, 2), mats.rugCream);
+  swThrow.position.set(0.54, 0.54, 8.64);
+  const swPillow = new THREE.Mesh(APP.makeRoundedBox(0.62, 0.14, 0.36, 0.04, 2), mats.ceramicWhite);
+  swPillow.position.set(0.54, 0.51, 10.02);
+  swPillow.rotation.x = -0.18;
+  const swHeadboard = new THREE.Mesh(APP.makeRoundedBox(0.98, 0.62, 0.06, 0.02, 2), mats.oakFurniture);
+  swHeadboard.position.set(0.54, 0.31, 10.28);
+  swHeadboard.castShadow = true;
+  g.add(swBedFrame, swMattress, swDuvet, swThrow, swPillow, swHeadboard);
+  arch.addBoxCollider(0.54, 9.32, 1.00, 1.96);
 
-  // Aapo Huhta framed poster + Oak wall shelf with books above sofa
-  addArt(0.54, 0.76, 1.69, 1.44, 10.34, Math.PI, 'huhta', mats.darkMetal, false);
+  // Aapo Huhta framed poster + Oak wall shelf with books on South wall
+  addArt(0.54, 0.76, 1.82, 1.44, 10.34, Math.PI, 'huhta', mats.darkMetal, false);
   const swShelf = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.028, 0.18), mats.oakFurniture);
-  swShelf.position.set(1.69, 1.98, 10.25);
+  swShelf.position.set(1.82, 1.98, 10.25);
   swShelf.castShadow = true;
   g.add(swShelf);
   for (let i = 0; i < 9; i++) {
     const bk = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.17 + (i % 3) * 0.02, 0.13),
       i % 3 === 0 ? mats.terracottaPot : (i % 3 === 1 ? mats.darkMetal : mats.sofaOlive));
-    bk.position.set(1.36 + i * 0.034, 2.08, 10.25);
+    bk.position.set(1.49 + i * 0.034, 2.08, 10.25);
     g.add(bk);
   }
 
-  // Brass 2-arm floor lamp in SW corner
+  // Brass 2-arm floor lamp in SE corner
   const flStem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.015, 1.56, 10), mats.brass);
-  flStem.position.set(0.34, 0.78, 10.06);
+  flStem.position.set(2.76, 0.78, 10.06);
   const flBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.02, 16), mats.brass);
-  flBase.position.set(0.34, 0.01, 10.06);
+  flBase.position.set(2.76, 0.01, 10.06);
   const shade1 = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.14, 12), mats.ceramicWhite);
-  shade1.position.set(0.42, 1.56, 9.98); shade1.rotation.z = -0.5;
+  shade1.position.set(2.68, 1.56, 9.98); shade1.rotation.z = 0.5;
   const shade2 = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.14, 12), mats.ceramicWhite);
-  shade2.position.set(0.28, 1.52, 9.96); shade2.rotation.z = 0.4;
+  shade2.position.set(2.82, 1.52, 9.96); shade2.rotation.z = -0.4;
   g.add(flStem, flBase, shade1, shade2);
 
-  // Round light-grey rug & dark walnut pebble coffee table
+  // Round light-grey rug in center of room (no sofa or table)
   const swRug = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.01, 28), mats.rugLightGrey);
-  swRug.position.set(1.55, 0.005, 8.95);
-  const walTop = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.022, 20), mats.walnut);
-  walTop.scale.set(1.25, 1, 0.92);
-  walTop.position.set(1.55, 0.36, 8.95); walTop.castShadow = true;
-  const walLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.35, 14), mats.walnut);
-  walLeg.position.set(1.55, 0.175, 8.95);
-  const yBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.03, 0.045, 12), new THREE.MeshStandardMaterial({ color: 0xd9b84a, roughness: 0.35 }));
-  yBowl.position.set(1.48, 0.39, 8.98);
-  const gBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.04, 0.05, 12), mats.sofaOlive);
-  gBowl.position.set(1.64, 0.39, 8.88);
-  g.add(swRug, walTop, walLeg, yBowl, gBowl);
+  swRug.position.set(1.92, 0.005, 9.25);
+  g.add(swRug);
 
   // Tilted TV + white electrical breaker cabinet on North wall (Z = 8.18)
   const swTv = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.42, 0.028), mats.tvScreen);

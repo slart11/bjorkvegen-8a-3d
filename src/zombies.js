@@ -441,7 +441,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     },
     {
       name: 'Soverom 2 vindu', isWindow: true, roomNode: 'sov2',
-      spawn: [-2.6, 9.10], outside: [-0.48, 9.10], inside: [0.85, 9.10]
+      spawn: [-2.6, 9.10], outside: [-0.48, 9.10], inside: [1.32, 9.10]
     },
     {
       name: 'Soverom 3 østvindu', isWindow: true, roomNode: 'sov3',
@@ -476,7 +476,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   const pickupMatBlue = new THREE.MeshStandardMaterial({ color: 0x176fd6, emissive: 0x0c346b, emissiveIntensity: 0.38, roughness: 0.35 });
   const pickupMatOrange = new THREE.MeshStandardMaterial({ color: 0xff621a, emissive: 0x6b2608, emissiveIntensity: 0.42, roughness: 0.35 });
   const pickupMatDark = new THREE.MeshStandardMaterial({ color: 0x1c2028, roughness: 0.55 });
-  const pickupCoords = [[0.62, 0.00, 8.58]];
+  const pickupCoords = [[2.12, 0.00, 9.65]];
   pickupCoords.forEach(([px, py, pz]) => {
     const pg = new THREE.Group();
     const box = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.34, 0.46), pickupMatBlue);
@@ -709,11 +709,14 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     noodleBowl.respawnT = 14;
     game.hunger = game.maxHunger;
     game.hungerWarned = false;
-    game.hp = Math.min(game.maxHp, game.hp + 10);
+    const missingHp = Math.max(0, game.maxHp - game.hp);
+    const healed = missingHp * 0.5;
+    game.hp = Math.min(game.maxHp, game.hp + healed);
     if (blaster.sfx.eat) blaster.sfx.eat();
     else blaster.sfx.wave();
     spawnBurst(noodleBowl.pos.x, noodleBowl.pos.y + 0.12, noodleBowl.pos.z, orangeSparkMat, 8, 2.2, 0.04);
-    showBanner('Spiste varme nudler på kjøkkenet! Sult 100%', 2.2);
+    const healTxt = healed >= 0.5 ? ` (+${Math.round(healed)} HP)` : '';
+    showBanner(`Spiste varme nudler på kjøkkenet! Sult 100%${healTxt}`, 2.2);
     return true;
   }
 
