@@ -535,6 +535,7 @@ APP.createBlasterSystem = function(scene, camera, arch) {
   // ==================== PROJECTILE DARTS & STATE ====================
   const darts = [];
   const MAX_MAG = 15;
+  const MAX_RESERVE = 120;
   const state = {
     enabled: true,
     ammo: MAX_MAG,
@@ -561,7 +562,15 @@ APP.createBlasterSystem = function(scene, camera, arch) {
   }
 
   function addAmmo(count) {
-    state.reserve = Math.min(120, state.reserve + count);
+    state.reserve = Math.min(MAX_RESERVE, state.reserve + count);
+  }
+
+  function fillAmmo() {
+    state.ammo = MAX_MAG;
+    state.reserve = MAX_RESERVE;
+    state.reloading = false;
+    state.reloadT = 0;
+    state.cooldown = 0;
   }
 
   function startReload() {
@@ -905,5 +914,5 @@ APP.createBlasterSystem = function(scene, camera, arch) {
     return true;
   }
 
-  return { state, sfx, setVisible, resetAmmo, resetWorldDamage, addAmmo, startReload, fire, fireGrenade, triggerKickAnim, update };
+  return { state, sfx, setVisible, resetAmmo, resetWorldDamage, addAmmo, fillAmmo, startReload, fire, fireGrenade, triggerKickAnim, update };
 };

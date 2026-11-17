@@ -290,7 +290,8 @@ window.APP = window.APP || {};
     if (e.code === 'KeyE') {
       const hws = (zombies.game.active && !zombies.game.gameOver && zombies.getHomeworkState) ? zombies.getHomeworkState() : null;
       if (hws && hws.active && Math.hypot(player.pos.x - hws.x, player.pos.z - hws.z) < 2.15) return;
-      if (zombies.tryEatNoodles) zombies.tryEatNoodles(player.pos);
+      if (zombies.tryEatNoodles && zombies.tryEatNoodles(player.pos)) return;
+      if (zombies.tryRefillAmmo) zombies.tryRefillAmmo(player.pos);
     }
     if (e.code === 'KeyQ' && mode === 'walk' && zombies.kickZombies) {
       blaster.sfx.unlock();
@@ -1046,11 +1047,13 @@ window.APP = window.APP || {};
         blaster.fire(zombies);
       }
 
-      // Homework / Noodle interaction prompt
+      // Homework / Noodle / Ammo interaction prompt
       const hsPrompt = (zombies.game.active && !zombies.game.gameOver && zombies.getHomeworkState) ? zombies.getHomeworkState() : null;
       const nearHw = hsPrompt && hsPrompt.active && Math.hypot(player.pos.x - hsPrompt.x, player.pos.z - hsPrompt.z) < 2.15;
       const nsPrompt = (zombies.game.active && !zombies.game.gameOver && zombies.getNoodleState) ? zombies.getNoodleState() : null;
       const nearNoodles = !nearHw && nsPrompt && nsPrompt.active && Math.hypot(player.pos.x - nsPrompt.x, player.pos.z - nsPrompt.z) < 2.30;
+      const ammoList = (zombies.game.active && !zombies.game.gameOver && zombies.getAmmoStates) ? zombies.getAmmoStates() : [];
+      const nearAmmo = !nearHw && !nearNoodles && ammoList.some(p => p.active && Math.hypot(player.pos.x - p.x, player.pos.z - p.z) < 2.20);
       if (nearHw) {
         const needTxt = hsPrompt.needHold <= 0.1 ? 'Trykk E' : `Hold E (${hsPrompt.progress.toFixed(1)} / ${hsPrompt.needHold.toFixed(1)}s)`;
         promptEl.textContent = `Lekser på spisebordet — ${needTxt} • ${Math.ceil(hsPrompt.timeLeft)}s igjen`;
@@ -1063,6 +1066,9 @@ window.APP = window.APP || {};
         if (hwProgressWrap) hwProgressWrap.classList.remove('show');
         if (nearNoodles) {
           promptEl.textContent = 'Varme nudler (+35 HP) — Trykk E for å spise';
+          promptEl.classList.add('show');
+        } else if (nearAmmo) {
+          promptEl.textContent = 'Ammunisjonseske — Trykk E for å fylle ammo helt opp';
           promptEl.classList.add('show');
         } else {
           promptEl.classList.remove('show');

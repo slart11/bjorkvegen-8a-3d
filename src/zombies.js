@@ -975,6 +975,22 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     return false;
   }
 
+  function tryRefillAmmo(playerPos) {
+    if (!game.active || game.gameOver) return false;
+    for (const pk of ammoPickups) {
+      if (pk.active && Math.hypot(playerPos.x - pk.pos.x, playerPos.z - pk.pos.z) < 2.20) {
+        if (blaster.fillAmmo) blaster.fillAmmo();
+        else blaster.addAmmo(120);
+        if (blaster.sfx.reload) blaster.sfx.reload();
+        else blaster.sfx.wave();
+        spawnBurst(pk.pos.x, pk.pos.y + 0.28, pk.pos.z, orangeSparkMat, 10, 2.6, 0.048);
+        showBanner('Ammunisjon fylt helt opp! (15 / 120)', 2.0);
+        return true;
+      }
+    }
+    return false;
+  }
+
   function setGameActive(flag) {
     game.active = flag;
     blaster.setVisible(flag);
@@ -1883,23 +1899,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
       }
     }
 
-    // Collect big ammo crate in Soverom 2 (respawns cleanly after 10s)
-    for (const pk of ammoPickups) {
-      if (!pk.active) {
-        pk.respawnT -= dt;
-        if (pk.respawnT <= 0) { pk.active = true; pk.mesh.visible = true; }
-        continue;
-      }
-      if (Math.hypot(playerPos.x - pk.pos.x, playerPos.z - pk.pos.z) < 1.15) {
-        pk.active = false;
-        pk.mesh.visible = false;
-        pk.respawnT = 10;
-        blaster.addAmmo(45);
-        blaster.sfx.wave();
-        spawnBurst(pk.pos.x, pk.pos.y + 0.28, pk.pos.z, orangeSparkMat, 8, 2.4, 0.045);
-        showBanner('+45 X-Shot piler plukket opp fra ammunisjonsesken!', 1.8);
-      }
-    }
+    // Permanent ammo crate in Soverom 2 (used by pressing E — never disappears)
 
     // VIP blonde Minecraft character ALWAYS spawns after 8 seconds
     if (vipPending) {
@@ -2332,7 +2332,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     game, talents, TALENT_COLS, TALENT_NODES, isTalentUnlocked, hasSelectableTalent, chooseTalent, skipTalentIfFull,
     kickZombies, tryFireGrenade, tryCallIsa, explodeAt,
     resetGame, setGameActive, raycastZombie, checkDartHit, setCatTarget,
-    tryEatNoodles, getNoodleState: () => ({ active: noodleBowl.active, x: noodleBowl.pos.x, z: noodleBowl.pos.z }),
+    tryEatNoodles, tryRefillAmmo, getNoodleState: () => ({ active: noodleBowl.active, x: noodleBowl.pos.x, z: noodleBowl.pos.z }),
     getAmmoStates: () => ammoPickups.map(p => ({ active: p.active, x: p.pos.x, z: p.pos.z })),
     getHomeworkState: () => ({ active: homework.active, timeLeft: homework.timeLeft, progress: homework.progress, needHold: getHwNeedHold(), x: homework.pos.x, z: homework.pos.z }),
     update, getMinimapDots, getCatDot, getIsaDot, isVipPending: () => vipPending
