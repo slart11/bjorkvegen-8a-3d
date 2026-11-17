@@ -843,17 +843,12 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     const matEye = new THREE.MeshBasicMaterial({ color: 0x7cff4d });
     const matPupil = new THREE.MeshBasicMaterial({ color: 0x090b08 });
     const matNose = new THREE.MeshStandardMaterial({ color: 0xe6849a, roughness: 0.6 });
-    const matCollar = new THREE.MeshStandardMaterial({ color: 0xff9f1a, emissive: 0x4d2800, roughness: 0.35 });
 
     const root = new THREE.Group();
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.36), matFur);
     body.position.set(0, 0.20, 0);
     body.castShadow = true; body.receiveShadow = true;
     root.add(body);
-
-    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.195, 0.045, 0.06), matCollar);
-    collar.position.set(0, 0.235, 0.145);
-    root.add(collar);
 
     const head = new THREE.Group();
     head.position.set(0, 0.285, 0.21);
