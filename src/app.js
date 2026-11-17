@@ -701,6 +701,9 @@ window.APP = window.APP || {};
   const hwHudSep = document.getElementById('hw-hud-sep');
   const hwHud = document.getElementById('hw-hud');
   const hwTimerEl = document.getElementById('hw-timer');
+  const hwBigBanner = document.getElementById('hw-big-banner');
+  const hwBigSec = document.getElementById('hw-big-sec');
+  const hwBigFill = document.getElementById('hw-big-fill');
   const hpFill = document.getElementById('hp-fill');
   const hpText = document.getElementById('hp-text');
   const hungerFill = document.getElementById('hunger-fill');
@@ -868,6 +871,19 @@ window.APP = window.APP || {};
           hwTimerEl.style.color = secs <= 7 ? '#ff5247' : '#59c8ff';
         }
       }
+      if (hwBigBanner && hwBigSec && hwBigFill && zombies.getHomeworkState) {
+        const hsBig = zombies.getHomeworkState();
+        hwBigBanner.classList.toggle('show', hsBig.active);
+        if (hsBig.active) {
+          const secs = Math.ceil(hsBig.timeLeft);
+          const pct = Math.max(0, Math.min(100, (hsBig.timeLeft / 20) * 100));
+          const color = secs <= 6 ? '#ff3b30' : (secs <= 12 ? '#ff9f0a' : '#59c8ff');
+          hwBigSec.textContent = `${secs}s`;
+          hwBigSec.style.color = color;
+          hwBigFill.style.width = `${pct}%`;
+          hwBigFill.style.background = color;
+        }
+      }
       waveText.textContent = gState.wave;
       zleftText.textContent = aliveCount;
       scoreText.textContent = gState.score;
@@ -891,6 +907,7 @@ window.APP = window.APP || {};
       }
     } else {
       waveBanner.classList.remove('show');
+      if (hwBigBanner) hwBigBanner.classList.remove('show');
       hurtVignette.style.opacity = '0';
       hitMarker.classList.remove('show');
       gameOverOverlay.classList.remove('show');

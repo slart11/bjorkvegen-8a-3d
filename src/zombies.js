@@ -838,7 +838,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
 
   // ==================== IMMORTAL BLACK CAT COMPANION ====================
   function createBlackCatMesh() {
-    const matFur = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.78 });
+    const matFur = new THREE.MeshStandardMaterial({ color: 0x020203, roughness: 0.94, metalness: 0.0 });
     const matEarIn = new THREE.MeshStandardMaterial({ color: 0xd97d95, roughness: 0.68 });
     const matEye = new THREE.MeshBasicMaterial({ color: 0x7cff4d });
     const matPupil = new THREE.MeshBasicMaterial({ color: 0x090b08 });
@@ -914,23 +914,43 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   }
 
   const catRig = createBlackCatMesh();
+  const ROAM_ROOMS = ['stue', 'kitchen', 'dining', 'entre_n', 'entre_s', 'sov1', 'bad', 'sov2', 'sov3', 'bod', 'terrace_n', 'terrace_s'];
   const cat = {
     rig: catRig,
     target: null,
     biteCooldown: 0,
     lungeT: 0,
     walkCycle: 0,
-    speed: 3.25
+    speed: 3.35,
+    roamRoom: 'kitchen',
+    roamX: 2.80,
+    roamZ: 1.90,
+    roamWait: 0,
+    roamWatchT: 0,
+    roamWatchX: 4.80,
+    roamWatchZ: 4.10
   };
+
+  function pickCatRoamGoal(curRoom) {
+    const pool = ROAM_ROOMS.filter(r => r !== curRoom);
+    const nextRoom = pool[Math.floor(Math.random() * pool.length)] || 'stue';
+    const base = NODES[nextRoom] || NODES.stue;
+    cat.roamRoom = nextRoom;
+    cat.roamX = base[0] + (Math.random() - 0.5) * 0.45;
+    cat.roamZ = base[1] + (Math.random() - 0.5) * 0.45;
+    cat.roamWatchT = 0;
+  }
 
   function resetCat() {
     cat.target = null;
     cat.biteCooldown = 0;
     cat.lungeT = 0;
     cat.walkCycle = 0;
+    cat.roamWait = 0.6;
     cat.rig.root.position.set(4.80, 0, 4.10);
     cat.rig.root.rotation.set(0, 0, 0);
     cat.rig.root.visible = game.active;
+    pickCatRoamGoal('stue');
   }
 
   function setCatTarget(zombie) {
@@ -950,15 +970,18 @@ APP.createZombieSystem = function(scene, arch, blaster) {
 
     if (cat.target && !isCatTargetAlive(cat.target)) {
       cat.target = null;
+      pickCatRoamGoal(nearestNode(cat.rig.root.position.x, cat.rig.root.position.z));
     }
 
     const cPos = cat.rig.root.position;
     const hunting = !!cat.target;
-    let tx = playerPos.x + 0.95;
-    let tz = playerPos.z - 0.55;
-    let stopDist = 0.35;
+    let tx = cat.roamX;
+    let tz = cat.roamZ;
+    let stopDist = 0.25;
+    let waiting = false;
 
     if (hunting) {
+      cat.roamWait = 0;
       const tPos = cat.target.rig.root.position;
       const catRoom = nearestNode(cPos.x, cPos.z);
       const tRoom = nearestNode(tPos.x, tPos.z);
@@ -975,29 +998,47 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       }
       stopDist = 0.62;
       openDoorIfNear(cPos.x, cPos.z, null);
+    } else if (cat.roamWait > 0) {
+      waiting = true;
+      cat.roamWait -= dt;
+      if (cat.roamWait <= 0) {
+        pickCatRoamGoal(nearestNode(cPos.x, cPos.z));
+      }
     } else {
       const catRoom = nearestNode(cPos.x, cPos.z);
-      if (catRoom !== playerRoom) {
-        const path = findPathNodes(catRoom, playerRoom);
+      if (catRoom !== cat.roamRoom) {
+        const path = findPathNodes(catRoom, cat.roamRoom);
         if (path.length >= 2) {
           const portalPt = getPortalTarget(path[0], path[1], cPos);
           tx = portalPt[0]; tz = portalPt[1];
-          stopDist = 0.08;
         }
       }
       openDoorIfNear(cPos.x, cPos.z, null);
+      if (Math.hypot(cat.roamX - cPos.x, cat.roamZ - cPos.z) < 0.42) {
+        cat.roamWait = 0.5 + Math.random() * 1.4;
+      } else {
+        cat.roamWatchT += dt;
+        if (cat.roamWatchT > 1.6) {
+          if (Math.hypot(cPos.x - cat.roamWatchX, cPos.z - cat.roamWatchZ) < 0.25) {
+            pickCatRoamGoal(catRoom);
+          }
+          cat.roamWatchX = cPos.x;
+          cat.roamWatchZ = cPos.z;
+          cat.roamWatchT = 0;
+        }
+      }
     }
 
     const dx = tx - cPos.x, dz = tz - cPos.z;
     const dist = Math.hypot(dx, dz);
-    if (dist > 0.08) {
+    if (!waiting && dist > 0.08) {
       cat.rig.root.rotation.y = Math.atan2(dx, dz);
     }
 
     let moving = false;
-    if (dist > stopDist) {
+    if (!waiting && dist > stopDist) {
       moving = true;
-      const moveSpeed = hunting ? cat.speed : 2.35;
+      const moveSpeed = hunting ? cat.speed : 2.15;
       const step = Math.min(dist - stopDist, moveSpeed * dt);
       cPos.x += (dx / dist) * step;
       cPos.z += (dz / dist) * step;
