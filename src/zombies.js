@@ -565,8 +565,9 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     }
 
     ng.position.set(2.02, 0.90, 0.38);
+    ng.visible = false;
     scene.add(ng);
-    return { mesh: ng, pos: new THREE.Vector3(2.02, 0.90, 0.38), active: true, respawnT: 0, steamPuffs };
+    return { mesh: ng, pos: new THREE.Vector3(2.02, 0.90, 0.38), active: false, spawnedForLow: false, steamPuffs };
   }
   const noodleBowl = createNoodleBowl();
 
@@ -649,7 +650,8 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     bannerMsg: '',
     bannerT: 0,
     hitMarkerT: 0,
-    hitWasHead: false
+    hitWasHead: false,
+    noodleFxT: 0
   };
 
   function showBanner(txt, dur = 2.6) {
@@ -688,12 +690,13 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     game.gameOver = false;
     game.hurtFlash = 0;
     game.hurtCooldown = 0;
+    game.noodleFxT = 0;
     game.betweenWavesT = 0;
     blaster.resetAmmo();
     ammoPickups.forEach(p => { p.active = true; p.mesh.visible = true; p.respawnT = 0; });
-    noodleBowl.active = true;
-    noodleBowl.mesh.visible = game.active;
-    noodleBowl.respawnT = 0;
+    noodleBowl.active = false;
+    noodleBowl.mesh.visible = false;
+    noodleBowl.spawnedForLow = false;
     homework.active = false;
     homework.spawnTimer = 12.0;
     homework.timeLeft = 0;
@@ -706,9 +709,10 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     if (!noodleBowl.active) return false;
     noodleBowl.active = false;
     noodleBowl.mesh.visible = false;
-    noodleBowl.respawnT = 14;
+    noodleBowl.spawnedForLow = false;
     game.hunger = game.maxHunger;
     game.hungerWarned = false;
+    game.noodleFxT = 1.0;
     const missingHp = Math.max(0, game.maxHp - game.hp);
     const healed = missingHp * 0.5;
     game.hp = Math.min(game.maxHp, game.hp + healed);
@@ -722,7 +726,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
 
   function tryEatNoodles(playerPos) {
     if (!game.active || game.gameOver || !noodleBowl.active) return false;
-    if (Math.hypot(playerPos.x - noodleBowl.pos.x, playerPos.z - noodleBowl.pos.z) < 2.05) {
+    if (Math.hypot(playerPos.x - noodleBowl.pos.x, playerPos.z - noodleBowl.pos.z) < 2.30) {
       return eatNoodles();
     }
     return false;
@@ -1207,6 +1211,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     if (game.hurtFlash > 0) game.hurtFlash = Math.max(0, game.hurtFlash - dt * 1.8);
     if (game.hurtCooldown > 0) game.hurtCooldown = Math.max(0, game.hurtCooldown - dt);
     if (game.hitMarkerT > 0) game.hitMarkerT = Math.max(0, game.hitMarkerT - dt);
+    if (game.noodleFxT > 0) game.noodleFxT = Math.max(0, game.noodleFxT - dt);
 
     // Update flying particles
     for (let i = particles.length - 1; i >= 0; i--) {
@@ -1235,22 +1240,20 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       if (game.hp <= 0) game.gameOver = true;
     }
 
-    // Kitchen noodle bowl steam animation, respawn & auto-eat on approach
-    if (!noodleBowl.active) {
-      noodleBowl.respawnT -= dt;
-      if (noodleBowl.respawnT <= 0) {
-        noodleBowl.active = true;
-        noodleBowl.mesh.visible = true;
-      }
-    } else {
+    // Kitchen noodle bowl spawns whenever hunger drops below 50
+    if (game.hunger < 50 && !noodleBowl.active && !noodleBowl.spawnedForLow) {
+      noodleBowl.active = true;
+      noodleBowl.mesh.visible = true;
+      noodleBowl.spawnedForLow = true;
+      blaster.sfx.wave();
+      showBanner('Varme nudler er klare på kjøkkenet! (Trykk E)', 2.8);
+    }
+    if (noodleBowl.active) {
       for (const sp of noodleBowl.steamPuffs) {
         sp.phase = (sp.phase + dt * 1.3) % 3.2;
         const t = sp.phase / 3.2;
         sp.mesh.position.y = 0.11 + t * 0.22;
         sp.mesh.scale.setScalar(0.75 + t * 0.7);
-      }
-      if (Math.hypot(playerPos.x - noodleBowl.pos.x, playerPos.z - noodleBowl.pos.z) < 1.32 && game.hunger < 92) {
-        eatNoodles();
       }
     }
 

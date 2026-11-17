@@ -12,6 +12,21 @@
   </div>
 
   <div id="hurt-vignette"></div>
+  <div id="noodle-spin-overlay" class="noodle-spin-overlay" aria-hidden="true">
+    <svg viewBox="0 0 120 120" width="190" height="190">
+      <line x1="16" y1="36" x2="106" y2="20" stroke="#d9a15b" stroke-width="5" stroke-linecap="round"/>
+      <line x1="20" y1="46" x2="108" y2="38" stroke="#c0843d" stroke-width="5" stroke-linecap="round"/>
+      <ellipse cx="60" cy="60" rx="44" ry="18" fill="#d98c2b"/>
+      <path d="M24 58 Q36 42 48 58 T72 58 T96 58" fill="none" stroke="#ffe066" stroke-width="6" stroke-linecap="round"/>
+      <path d="M28 50 Q42 36 56 50 T84 50" fill="none" stroke="#ffd23f" stroke-width="5.5" stroke-linecap="round"/>
+      <ellipse cx="42" cy="52" rx="11" ry="8" fill="#fff7dc"/>
+      <circle cx="42" cy="52" r="4.5" fill="#ff9f1a"/>
+      <circle cx="76" cy="52" r="3.5" fill="#58bd42"/>
+      <circle cx="65" cy="46" r="3" fill="#58bd42"/>
+      <path d="M14 58 C14 96, 106 96, 106 58 Z" fill="#b84028" stroke="#7d2514" stroke-width="3"/>
+      <path d="M36 92 L84 92 L78 102 L42 102 Z" fill="#8f2d1a"/>
+    </svg>
+  </div>
   <div class="crosshair"><div id="hit-marker"></div></div>
   <div id="interact-prompt" class="panel interact-prompt hud">Trykk E eller klikk for å åpne/lukke dør</div>
   <div id="hw-progress-wrap" class="panel hw-progress-wrap hud"><div id="hw-progress-fill" class="hw-progress-fill"></div></div>
@@ -58,8 +73,6 @@
       <div class="sep"></div>
       <button class="btn active" data-light="sun" title="Ettermiddagssol som på bildene">Sol</button>
       <button class="btn" data-light="evening" title="Kveldsstemning med lommelykt">Kveld</button>
-      <div class="sep"></div>
-      <button class="btn" id="btn-doors" title="Åpne eller lukk alle innerdører">Lukk innerdører</button>
     </div>
   </div>
 

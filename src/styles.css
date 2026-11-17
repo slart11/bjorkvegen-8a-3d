@@ -196,6 +196,13 @@ body.zombie-mode .crosshair {
   background: radial-gradient(circle, transparent 48%, rgba(205, 22, 22, 0.65) 100%);
   opacity: 0;
 }
+.noodle-spin-overlay {
+  display: none; position: fixed; top: 50%; left: 50%;
+  width: 190px; height: 190px; transform: translate(-50%, -50%);
+  pointer-events: none; z-index: 32;
+  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.55));
+}
+.noodle-spin-overlay.show { display: block; }
 
 .zombie-hud {
   display: none; align-items: center; gap: 8px; padding: 5px 11px;

@@ -284,8 +284,7 @@ window.APP = window.APP || {};
     if (e.code === 'KeyE') {
       const hws = (zombies.game.active && !zombies.game.gameOver && zombies.getHomeworkState) ? zombies.getHomeworkState() : null;
       if (hws && hws.active && Math.hypot(player.pos.x - hws.x, player.pos.z - hws.z) < 2.15) return;
-      if (zombies.tryEatNoodles && zombies.tryEatNoodles(player.pos)) return;
-      toggleNearestDoor();
+      if (zombies.tryEatNoodles) zombies.tryEatNoodles(player.pos);
     }
     if (e.code === 'KeyH') document.body.classList.toggle('hud-hidden');
     if (e.code === 'KeyR') { blaster.sfx.unlock(); blaster.startReload(); }
@@ -305,11 +304,8 @@ window.APP = window.APP || {};
     if (e.button !== 0) return;
     blaster.sfx.unlock();
     if (mode === 'walk' && controlMode === 'nomouse') {
-      const hitDoor = raycastDoorFromCenterOrMouse(e);
       if (zombies.game.active && !zombies.game.gameOver) {
         blaster.fire(zombies);
-      } else if (hitDoor) {
-        toggleDoor(hitDoor);
       }
       return;
     }
@@ -324,16 +320,13 @@ window.APP = window.APP || {};
     if (!isDragging) return;
     isDragging = false;
     canvas.classList.remove('dragging');
-    // Short click (not drag) -> shoot or toggle door, plus request pointer lock in walk mode
+    // Short click (not drag) -> shoot, plus request pointer lock in walk mode
     if (dragMoved < 5 && mode === 'walk' && controlMode === 'mouse') {
-      const hitDoor = raycastDoorFromCenterOrMouse(e);
       if (zombies.game.active && !zombies.game.gameOver) {
         blaster.fire(zombies);
         if (document.pointerLockElement !== canvas) {
           try { canvas.requestPointerLock(); } catch (_) {}
         }
-      } else if (hitDoor) {
-        toggleDoor(hitDoor);
       } else if (document.pointerLockElement !== canvas) {
         try { canvas.requestPointerLock(); } catch (_) {}
       }
@@ -430,18 +423,8 @@ window.APP = window.APP || {};
     if (best) toggleDoor(best);
   }
 
-  let allIntOpen = true;
-  document.getElementById('btn-doors').addEventListener('click', () => {
-    allIntOpen = !allIntOpen;
-    arch.doors.forEach(d => {
-      if (d.isInterior || d.type === 'sliding') {
-        d.isOpen = allIntOpen;
-        arch.colliders[d.colliderIdx].enabled = !allIntOpen;
-      }
-    });
-    document.getElementById('btn-doors').textContent = allIntOpen ? 'Lukk innerdører' : 'Alle dører åpne';
-  });
-  document.getElementById('btn-doors').textContent = 'Lukk innerdører';
+  // Doors are fixed and cannot be opened/closed manually by the player
+  document.getElementById('btn-doors')?.remove();
 
   // Help card toggle (optional if removed from HUD)
   const helpCard = document.getElementById('help-card');
@@ -726,6 +709,7 @@ window.APP = window.APP || {};
   const ammoRes = document.getElementById('ammo-res');
   const waveBanner = document.getElementById('wave-banner');
   const hurtVignette = document.getElementById('hurt-vignette');
+  const noodleSpinEl = document.getElementById('noodle-spin-overlay');
   const hitMarker = document.getElementById('hit-marker');
   const gameOverOverlay = document.getElementById('gameover-overlay');
   const gameOverStats = document.getElementById('gameover-stats');
@@ -817,12 +801,11 @@ window.APP = window.APP || {};
       euler.set(player.pitch, player.yaw, 0, 'YXZ');
       camera.quaternion.setFromEuler(euler);
 
-      // Homework / Noodle / Door hover prompt
+      // Homework / Noodle interaction prompt
       const hsPrompt = (zombies.game.active && !zombies.game.gameOver && zombies.getHomeworkState) ? zombies.getHomeworkState() : null;
       const nearHw = hsPrompt && hsPrompt.active && Math.hypot(player.pos.x - hsPrompt.x, player.pos.z - hsPrompt.z) < 2.15;
       const nsPrompt = (zombies.game.active && !zombies.game.gameOver && zombies.getNoodleState) ? zombies.getNoodleState() : null;
-      const nearNoodles = !nearHw && nsPrompt && nsPrompt.active && Math.hypot(player.pos.x - nsPrompt.x, player.pos.z - nsPrompt.z) < 2.05;
-      const lookDoor = (nearHw || nearNoodles) ? null : raycastDoorFromCenterOrMouse(null);
+      const nearNoodles = !nearHw && nsPrompt && nsPrompt.active && Math.hypot(player.pos.x - nsPrompt.x, player.pos.z - nsPrompt.z) < 2.30;
       if (nearHw) {
         promptEl.textContent = `Lekser på spisebordet — Hold E (${hsPrompt.progress.toFixed(1)} / 3.0s) • ${Math.ceil(hsPrompt.timeLeft)}s igjen`;
         promptEl.classList.add('show');
@@ -833,10 +816,7 @@ window.APP = window.APP || {};
       } else {
         if (hwProgressWrap) hwProgressWrap.classList.remove('show');
         if (nearNoodles) {
-          promptEl.textContent = 'Varme nudler — Trykk E eller gå inntil for å spise';
-          promptEl.classList.add('show');
-        } else if (lookDoor) {
-          promptEl.textContent = `${lookDoor.label} — Trykk E eller klikk for å ${lookDoor.isOpen ? 'lukke' : 'åpne'}`;
+          promptEl.textContent = 'Varme nudler — Trykk E for å spise';
           promptEl.classList.add('show');
         } else {
           promptEl.classList.remove('show');
@@ -901,6 +881,15 @@ window.APP = window.APP || {};
       ammoCur.textContent = blaster.state.reloading ? '...' : blaster.state.ammo;
       ammoRes.textContent = blaster.state.reserve;
       hurtVignette.style.opacity = gState.hurtFlash.toFixed(2);
+      if (noodleSpinEl) {
+        if (gState.noodleFxT > 0) {
+          const p = gState.noodleFxT;
+          noodleSpinEl.classList.add('show');
+          noodleSpinEl.style.transform = `translate(-50%, -50%) rotate(${(1 - p) * 540}deg) scale(${0.65 + Math.sin(p * Math.PI) * 0.65})`;
+        } else {
+          noodleSpinEl.classList.remove('show');
+        }
+      }
       hitMarker.classList.toggle('show', gState.hitMarkerT > 0);
       hitMarker.classList.toggle('head', gState.hitWasHead);
       if (gState.bannerT > 0) {
@@ -919,6 +908,7 @@ window.APP = window.APP || {};
     } else {
       waveBanner.classList.remove('show');
       if (hwBigBanner) hwBigBanner.classList.remove('show');
+      if (noodleSpinEl) noodleSpinEl.classList.remove('show');
       hurtVignette.style.opacity = '0';
       hitMarker.classList.remove('show');
       gameOverOverlay.classList.remove('show');
