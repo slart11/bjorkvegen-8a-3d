@@ -282,6 +282,8 @@ window.APP = window.APP || {};
       }
     }
     if (e.code === 'KeyE') {
+      const hws = (zombies.game.active && !zombies.game.gameOver && zombies.getHomeworkState) ? zombies.getHomeworkState() : null;
+      if (hws && hws.active && Math.hypot(player.pos.x - hws.x, player.pos.z - hws.z) < 2.15) return;
       if (zombies.tryEatNoodles && zombies.tryEatNoodles(player.pos)) return;
       toggleNearestDoor();
     }
@@ -676,6 +678,17 @@ window.APP = window.APP || {};
           mctx.strokeRect(nx - 2.6, ny - 2.6, 5.2, 5.2);
         }
       }
+      if (zombies.getHomeworkState) {
+        const hs = zombies.getHomeworkState();
+        if (hs.active) {
+          const [hx, hy] = toMM(hs.x, hs.z);
+          mctx.fillStyle = '#59c8ff';
+          mctx.strokeStyle = '#ffffff';
+          mctx.lineWidth = 1.2;
+          mctx.fillRect(hx - 3.0, hy - 3.0, 6.0, 6.0);
+          mctx.strokeRect(hx - 3.0, hy - 3.0, 6.0, 6.0);
+        }
+      }
     }
   }
 
@@ -683,6 +696,11 @@ window.APP = window.APP || {};
   const clock = new THREE.Clock();
   const roomInd = document.getElementById('room-indicator');
   const promptEl = document.getElementById('interact-prompt');
+  const hwProgressWrap = document.getElementById('hw-progress-wrap');
+  const hwProgressFill = document.getElementById('hw-progress-fill');
+  const hwHudSep = document.getElementById('hw-hud-sep');
+  const hwHud = document.getElementById('hw-hud');
+  const hwTimerEl = document.getElementById('hw-timer');
   const hpFill = document.getElementById('hp-fill');
   const hpText = document.getElementById('hp-text');
   const hungerFill = document.getElementById('hunger-fill');
@@ -785,24 +803,36 @@ window.APP = window.APP || {};
       euler.set(player.pitch, player.yaw, 0, 'YXZ');
       camera.quaternion.setFromEuler(euler);
 
-      // Noodle / Door hover prompt
+      // Homework / Noodle / Door hover prompt
+      const hsPrompt = (zombies.game.active && !zombies.game.gameOver && zombies.getHomeworkState) ? zombies.getHomeworkState() : null;
+      const nearHw = hsPrompt && hsPrompt.active && Math.hypot(player.pos.x - hsPrompt.x, player.pos.z - hsPrompt.z) < 2.15;
       const nsPrompt = (zombies.game.active && !zombies.game.gameOver && zombies.getNoodleState) ? zombies.getNoodleState() : null;
-      const nearNoodles = nsPrompt && nsPrompt.active && Math.hypot(player.pos.x - nsPrompt.x, player.pos.z - nsPrompt.z) < 2.05;
-      const lookDoor = nearNoodles ? null : raycastDoorFromCenterOrMouse(null);
-      if (nearNoodles) {
-        promptEl.textContent = 'Varme nudler — Trykk E eller gå inntil for å spise';
+      const nearNoodles = !nearHw && nsPrompt && nsPrompt.active && Math.hypot(player.pos.x - nsPrompt.x, player.pos.z - nsPrompt.z) < 2.05;
+      const lookDoor = (nearHw || nearNoodles) ? null : raycastDoorFromCenterOrMouse(null);
+      if (nearHw) {
+        promptEl.textContent = `Lekser på spisebordet — Hold E (${hsPrompt.progress.toFixed(1)} / 3.0s) • ${Math.ceil(hsPrompt.timeLeft)}s igjen`;
         promptEl.classList.add('show');
-      } else if (lookDoor) {
-        promptEl.textContent = `${lookDoor.label} — Trykk E eller klikk for å ${lookDoor.isOpen ? 'lukke' : 'åpne'}`;
-        promptEl.classList.add('show');
+        if (hwProgressWrap && hwProgressFill) {
+          hwProgressWrap.classList.add('show');
+          hwProgressFill.style.width = `${Math.min(100, (hsPrompt.progress / hsPrompt.needHold) * 100)}%`;
+        }
       } else {
-        promptEl.classList.remove('show');
+        if (hwProgressWrap) hwProgressWrap.classList.remove('show');
+        if (nearNoodles) {
+          promptEl.textContent = 'Varme nudler — Trykk E eller gå inntil for å spise';
+          promptEl.classList.add('show');
+        } else if (lookDoor) {
+          promptEl.textContent = `${lookDoor.label} — Trykk E eller klikk for å ${lookDoor.isOpen ? 'lukke' : 'åpne'}`;
+          promptEl.classList.add('show');
+        } else {
+          promptEl.classList.remove('show');
+        }
       }
       roomInd.textContent = detectRoom(player.pos.x, player.pos.z);
 
       // Update X-Shot Insanity blaster & Minecraft zombie horde
       if (zombies.game.active) {
-        zombies.update(dt, player.pos);
+        zombies.update(dt, player.pos, !!keys['KeyE']);
         blaster.update(dt, isMoving, zombies, curLightMood);
       }
     } else {
@@ -827,6 +857,16 @@ window.APP = window.APP || {};
         hungerFill.style.width = `${gState.hunger}%`;
         hungerFill.style.background = gState.hunger > 50 ? '#ffbe2e' : (gState.hunger > 25 ? '#ff7b29' : '#ff3b30');
         hungerText.textContent = Math.ceil(gState.hunger);
+      }
+      if (hwHud && hwHudSep && hwTimerEl && zombies.getHomeworkState) {
+        const hsHud = zombies.getHomeworkState();
+        hwHud.style.display = hsHud.active ? 'flex' : 'none';
+        hwHudSep.style.display = hsHud.active ? 'block' : 'none';
+        if (hsHud.active) {
+          const secs = Math.ceil(hsHud.timeLeft);
+          hwTimerEl.textContent = `${secs}s`;
+          hwTimerEl.style.color = secs <= 7 ? '#ff5247' : '#59c8ff';
+        }
       }
       waveText.textContent = gState.wave;
       zleftText.textContent = aliveCount;

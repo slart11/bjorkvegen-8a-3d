@@ -110,6 +110,17 @@ body.no-mouse .crosshair { opacity: 1; }
   pointer-events: none; z-index: 18; opacity: 0; transition: opacity 0.15s;
 }
 .interact-prompt.show { opacity: 1; }
+.hw-progress-wrap {
+  display: none; position: fixed; top: 61%; left: 50%; transform: translateX(-50%);
+  width: 220px; height: 12px; padding: 2px; border-radius: 7px;
+  pointer-events: none; z-index: 18; overflow: hidden;
+}
+.hw-progress-wrap.show { display: block; }
+.hw-progress-fill {
+  width: 0%; height: 100%; border-radius: 5px;
+  background: linear-gradient(90deg, #59c8ff, #4cd964);
+  transition: width 0.05s linear;
+}
 
 /* Room badge */
 .room-indicator {

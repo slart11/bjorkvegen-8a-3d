@@ -551,6 +551,64 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   }
   const noodleBowl = createNoodleBowl();
 
+  // ==================== DINING TABLE HOMEWORK (LEKSER) ====================
+  function createHomeworkMesh() {
+    const hg = new THREE.Group();
+    const coverMat = new THREE.MeshStandardMaterial({ color: 0x2659a8, roughness: 0.55 });
+    const paperMat = new THREE.MeshStandardMaterial({ color: 0xfbf8ef, roughness: 0.8 });
+    const lineMat = new THREE.MeshStandardMaterial({ color: 0x5c85c9, roughness: 0.7 });
+    const pencilMat = new THREE.MeshStandardMaterial({ color: 0xffc42e, roughness: 0.5 });
+    const eraserMat = new THREE.MeshStandardMaterial({ color: 0xe67c94, roughness: 0.6 });
+    const beaconMat = new THREE.MeshBasicMaterial({ color: 0x59c8ff, transparent: true, opacity: 0.85 });
+
+    const cover = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.010, 0.23), coverMat);
+    cover.position.y = 0.005;
+    hg.add(cover);
+
+    const page = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.008, 0.205), paperMat);
+    page.position.y = 0.012;
+    hg.add(page);
+
+    for (let i = -3; i <= 3; i++) {
+      const rule = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.002, 0.004), lineMat);
+      rule.position.set(0, 0.017, i * 0.023);
+      hg.add(rule);
+    }
+
+    const pencil = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.16, 6), pencilMat);
+    pencil.rotation.z = Math.PI / 2;
+    pencil.rotation.y = 0.38;
+    pencil.position.set(0.04, 0.022, 0.05);
+    const eraser = new THREE.Mesh(new THREE.CylinderGeometry(0.0062, 0.0062, 0.018, 6), eraserMat);
+    eraser.rotation.z = Math.PI / 2;
+    eraser.rotation.y = 0.38;
+    eraser.position.set(-0.032, 0.022, 0.022);
+    hg.add(pencil, eraser);
+
+    const beacon = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.012, 8, 22), beaconMat);
+    beacon.rotation.x = Math.PI / 2;
+    beacon.position.y = 0.18;
+    hg.add(beacon);
+
+    hg.position.set(4.50, 0.746, 0.52);
+    hg.visible = false;
+    scene.add(hg);
+    return { mesh: hg, beacon };
+  }
+  const hwVisual = createHomeworkMesh();
+  const homework = {
+    active: false,
+    spawnTimer: 12.0,
+    timeLeft: 0,
+    maxTime: 20.0,
+    progress: 0,
+    needHold: 3.0,
+    pos: new THREE.Vector3(4.50, 0.746, 0.52),
+    mesh: hwVisual.mesh,
+    beacon: hwVisual.beacon,
+    phase: 0
+  };
+
   // ==================== ZOMBIE HORDE & GAME STATE ====================
   const zombies = [];
   const game = {
@@ -617,6 +675,11 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     noodleBowl.active = true;
     noodleBowl.mesh.visible = game.active;
     noodleBowl.respawnT = 0;
+    homework.active = false;
+    homework.spawnTimer = 12.0;
+    homework.timeLeft = 0;
+    homework.progress = 0;
+    homework.mesh.visible = false;
     startWave(1);
   }
 
@@ -649,6 +712,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
     cat.rig.root.visible = flag;
     ammoPickups.forEach(p => { p.mesh.visible = flag && p.active; });
     noodleBowl.mesh.visible = flag && noodleBowl.active;
+    homework.mesh.visible = flag && homework.active;
     if (!flag) {
       clearZombies();
     } else if (zombies.length === 0 && game.toSpawn === 0 && game.betweenWavesT <= 0) {
@@ -1074,7 +1138,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   }
 
   // ==================== UPDATE LOOP ====================
-  function update(dt, playerPos) {
+  function update(dt, playerPos, holdE = false) {
     if (game.bannerT > 0) game.bannerT = Math.max(0, game.bannerT - dt);
     if (game.hurtFlash > 0) game.hurtFlash = Math.max(0, game.hurtFlash - dt * 1.8);
     if (game.hurtCooldown > 0) game.hurtCooldown = Math.max(0, game.hurtCooldown - dt);
@@ -1123,6 +1187,51 @@ APP.createZombieSystem = function(scene, arch, blaster) {
       }
       if (Math.hypot(playerPos.x - noodleBowl.pos.x, playerPos.z - noodleBowl.pos.z) < 1.32 && game.hunger < 92) {
         eatNoodles();
+      }
+    }
+
+    // Dining table homework event (must hold E for 3s within 20s)
+    if (!homework.active) {
+      homework.spawnTimer -= dt;
+      if (homework.spawnTimer <= 0) {
+        homework.active = true;
+        homework.timeLeft = homework.maxTime;
+        homework.progress = 0;
+        homework.mesh.visible = true;
+        blaster.sfx.wave();
+        showBanner('Lekser på spisebordet! Hold E i 3s innen 20s!', 3.2);
+      }
+    } else {
+      homework.phase += dt * 4.5;
+      homework.beacon.position.y = 0.16 + Math.sin(homework.phase) * 0.05;
+      homework.timeLeft = Math.max(0, homework.timeLeft - dt);
+
+      const nearHw = Math.hypot(playerPos.x - homework.pos.x, playerPos.z - homework.pos.z) < 2.15;
+      if (nearHw && holdE) {
+        homework.progress = Math.min(homework.needHold, homework.progress + dt);
+      } else {
+        homework.progress = 0;
+      }
+
+      if (homework.progress >= homework.needHold) {
+        homework.active = false;
+        homework.mesh.visible = false;
+        homework.progress = 0;
+        homework.spawnTimer = 17 + Math.random() * 8;
+        game.score += 200;
+        blaster.sfx.wave();
+        spawnBurst(homework.pos.x, homework.pos.y + 0.12, homework.pos.z, orangeSparkMat, 10, 2.5, 0.045);
+        showBanner('Lekser ferdig! +200 poeng', 2.4);
+      } else if (homework.timeLeft <= 0) {
+        homework.active = false;
+        homework.mesh.visible = false;
+        homework.progress = 0;
+        homework.spawnTimer = 17 + Math.random() * 8;
+        game.hp = Math.max(0, game.hp - 35);
+        game.hurtFlash = 0.85;
+        blaster.sfx.hurt();
+        showBanner('Du rakk ikke leksene på 20s! -35 HP', 3.0);
+        if (game.hp <= 0) game.gameOver = true;
       }
     }
 
@@ -1384,6 +1493,7 @@ APP.createZombieSystem = function(scene, arch, blaster) {
   return {
     game, resetGame, setGameActive, raycastZombie, checkDartHit, setCatTarget,
     tryEatNoodles, getNoodleState: () => ({ active: noodleBowl.active, x: noodleBowl.pos.x, z: noodleBowl.pos.z }),
+    getHomeworkState: () => ({ active: homework.active, timeLeft: homework.timeLeft, progress: homework.progress, needHold: homework.needHold, x: homework.pos.x, z: homework.pos.z }),
     update, getMinimapDots, getCatDot, isVipPending: () => vipPending
   };
 };
