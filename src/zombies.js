@@ -557,6 +557,10 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     {
       name: 'Soverom 3 østvindu', isWindow: true, roomNode: 'sov3',
       spawn: [11.2, 7.95], outside: [8.05, 7.95], inside: [6.85, 8.05]
+    },
+    {
+      name: 'Kjøleskap', isFridge: true, roomNode: 'kitchen',
+      spawn: [0.30, 2.29], outside: [0.32, 2.29], inside: [1.18, 2.29]
     }
   ];
 
@@ -889,10 +893,12 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
 
   let vipPending = true;
   let vipTimer = 8.0;
+  let fridgeSpawnedThisWave = false;
   let waveQueue = [];
 
   function startWave(num) {
     game.wave = num;
+    fridgeSpawnedThisWave = false;
     const baseNormal = 7;
     const extraHelmets = Math.min(3, Math.max(0, num - 1)); // +1 helmet zombie (2x HP) per wave after Wave 1, up to Wave 4
     const extraCreepers = Math.max(0, num - 4);             // +1 exploding creeper per wave after Wave 4
@@ -941,6 +947,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     blaster.resetAmmo();
     if (blaster.resetWorldDamage) blaster.resetWorldDamage();
     if (arch.resetBlinds) arch.resetBlinds();
+    if (arch.fridgeControl) arch.fridgeControl.openTimer = 0;
     ammoPickups.forEach(p => { p.active = true; p.mesh.visible = true; p.respawnT = 0; });
     noodleBowl.active = false;
     noodleBowl.mesh.visible = false;
@@ -1014,13 +1021,25 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     const isCreeper = !isVip && spawnKind === 'creeper';
     const armored = !isVip && spawnKind === 'helmet';
     // VIP Minecraft character enters through the Front Door (Inngangsdør) down the hallway toward the living room!
-    const portal = isVip ? (BREACH_PORTALS.find(p => p.name === 'Inngangsdør') || BREACH_PORTALS[5]) : BREACH_PORTALS[Math.floor(Math.random() * BREACH_PORTALS.length)];
+    let portal;
+    if (isVip) {
+      portal = BREACH_PORTALS.find(p => p.name === 'Inngangsdør') || BREACH_PORTALS[5];
+    } else if (!fridgeSpawnedThisWave && waveQueue.length <= 4) {
+      portal = BREACH_PORTALS.find(p => p.isFridge) || BREACH_PORTALS[0];
+    } else {
+      portal = BREACH_PORTALS[Math.floor(Math.random() * BREACH_PORTALS.length)];
+    }
+    if (portal.isFridge) fridgeSpawnedThisWave = true;
     const runner = !isVip && !isCreeper && !armored && game.wave >= 3 && Math.random() < 0.25;
     const scale = armored ? 1.05 : (isCreeper ? 0.96 : 0.98 + Math.random() * 0.06);
     const rig = createZombieMesh(armored, scale, isVip, isCreeper);
 
     if (isVip) {
       rig.root.position.set(portal.outside[0], -0.10, portal.outside[1] + 0.35);
+    } else if (portal.isFridge) {
+      rig.root.position.set(portal.spawn[0], 0.04, portal.spawn[1]);
+      rig.root.rotation.y = Math.PI / 2;
+      if (arch.fridgeControl) arch.fridgeControl.openTimer = Math.max(arch.fridgeControl.openTimer, 1.55);
     } else {
       rig.root.position.set(portal.spawn[0], -0.16, portal.spawn[1]);
     }
@@ -1030,6 +1049,8 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     const approachQueue = [];
     if (isVip) {
       approachQueue.push(portal.outside);
+    } else if (portal.isFridge) {
+      // Zombie waits inside fridge momentarily as the door swings open
     } else if (portal.viaLawnOpening) {
       approachQueue.push([10.35 * S, 4.90 * S], [9.45 * S, 4.90 * S], portal.outside);
     } else if (portal.viaTerrace) {
@@ -1041,7 +1062,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     zombies.push({
       rig,
       portal,
-      phase: 'approach', // 'approach' | 'breach' | 'chase' | 'dying'
+      phase: portal.isFridge ? 'breach' : 'approach', // 'approach' | 'breach' | 'chase' | 'dying'
       queue: approachQueue,
       breachT: 0,
       breachShattered: false,
@@ -1805,6 +1826,14 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
       if (ex.life <= 0) { scene.remove(ex.mesh); explosions.splice(i, 1); }
     }
 
+    // Smoothly open & close the kitchen refrigerator door as zombies emerge
+    if (arch.fridgeControl) {
+      const fc = arch.fridgeControl;
+      if (fc.openTimer > 0) fc.openTimer = Math.max(0, fc.openTimer - dt);
+      const wantAngle = fc.openTimer > 0 ? fc.targetAngle : 0;
+      fc.doorPivot.rotation.y += (wantAngle - fc.doorPivot.rotation.y) * Math.min(1, dt * 8.5);
+    }
+
     if (!game.active || game.gameOver || game.talentOpen) return;
 
     if (game.kickCooldown > 0) game.kickCooldown = Math.max(0, game.kickCooldown - dt);
@@ -2133,7 +2162,10 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
         const pr = z.portal;
         if (!z.breachShattered) {
           z.breachShattered = true;
-          if (pr.isWindow) {
+          if (pr.isFridge) {
+            if (arch.fridgeControl) arch.fridgeControl.openTimer = Math.max(arch.fridgeControl.openTimer, 1.45);
+            blaster.sfx.chip();
+          } else if (pr.isWindow) {
             blaster.sfx.glass();
             spawnBurst((pr.outside[0] + pr.inside[0]) * 0.5, 1.35, (pr.outside[1] + pr.inside[1]) * 0.5, shardMat, 14, 4.2, 0.065);
             if (arch.blindSlats && arch.blindSlats.length) {
@@ -2159,17 +2191,29 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
             openDoorIfNear(pr.outside[0], pr.outside[1], pr.doorLabel);
           }
         }
-        const dur = pr.isWindow ? 1.05 : 0.65;
+        const dur = pr.isFridge ? 1.55 : (pr.isWindow ? 1.05 : 0.65);
         z.breachT += dt / dur;
         const u = Math.min(1, z.breachT);
-        pos.x = pr.outside[0] + (pr.inside[0] - pr.outside[0]) * u;
-        pos.z = pr.outside[1] + (pr.inside[1] - pr.outside[1]) * u;
-        // Classic jump/vault arc over window sill!
-        pos.y = pr.isWindow ? Math.sin(u * Math.PI) * 0.96 : 0;
-        const ang = Math.atan2(pr.inside[0] - pr.outside[0], pr.inside[1] - pr.outside[1]);
-        z.rig.root.rotation.y = ang;
-        z.rig.legL.rotation.x = Math.sin(u * Math.PI * 3) * 0.7;
-        z.rig.legR.rotation.x = -Math.sin(u * Math.PI * 3) * 0.7;
+        if (pr.isFridge) {
+          // Wait inside until fridge door swings open (first 28%), then step out into the kitchen
+          const w = u < 0.28 ? 0 : (u - 0.28) / 0.72;
+          pos.x = pr.outside[0] + (pr.inside[0] - pr.outside[0]) * w;
+          pos.z = pr.outside[1] + (pr.inside[1] - pr.outside[1]) * w;
+          pos.y = 0;
+          if (arch.fridgeControl && u < 0.86) arch.fridgeControl.openTimer = Math.max(arch.fridgeControl.openTimer, 0.22);
+          z.rig.root.rotation.y = Math.atan2(pr.inside[0] - pr.outside[0], pr.inside[1] - pr.outside[1]);
+          z.rig.legL.rotation.x = w > 0 ? Math.sin(w * Math.PI * 3) * 0.65 : 0;
+          z.rig.legR.rotation.x = w > 0 ? -Math.sin(w * Math.PI * 3) * 0.65 : 0;
+        } else {
+          pos.x = pr.outside[0] + (pr.inside[0] - pr.outside[0]) * u;
+          pos.z = pr.outside[1] + (pr.inside[1] - pr.outside[1]) * u;
+          // Classic jump/vault arc over window sill!
+          pos.y = pr.isWindow ? Math.sin(u * Math.PI) * 0.96 : 0;
+          const ang = Math.atan2(pr.inside[0] - pr.outside[0], pr.inside[1] - pr.outside[1]);
+          z.rig.root.rotation.y = ang;
+          z.rig.legL.rotation.x = Math.sin(u * Math.PI * 3) * 0.7;
+          z.rig.legR.rotation.x = -Math.sin(u * Math.PI * 3) * 0.7;
+        }
         if (u >= 1) {
           pos.y = 0;
           z.phase = 'chase';

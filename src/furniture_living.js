@@ -127,19 +127,55 @@ APP.furnishLivingAndKitchen = function(scene, mats, arch) {
   APP.addPlant = addPlant;
 
   // ==================== 1. JKE DESIGN KITCHEN ====================
-  // Tall integrated fridge/freezer (X=0..0.60, Z=1.96..2.60)
-  const fridge = new THREE.Mesh(new THREE.BoxGeometry(0.60, 2.38, 0.62), mats.kitchenGloss);
-  fridge.position.set(0.30, 1.19, 2.29);
-  fridge.castShadow = true; fridge.receiveShadow = true;
-  g.add(fridge);
+  // Tall integrated fridge/freezer (X=0..0.60, Z=1.96..2.60) — hollow lit interior + animated door (indestructible)
+  const fridgeGroup = new THREE.Group();
+  const fBack = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.38, 0.62), mats.kitchenGloss);
+  fBack.position.set(0.03, 1.19, 2.29);
+  const fLeft = new THREE.Mesh(new THREE.BoxGeometry(0.56, 2.38, 0.045), mats.kitchenGloss);
+  fLeft.position.set(0.30, 1.19, 1.995);
+  const fRight = new THREE.Mesh(new THREE.BoxGeometry(0.56, 2.38, 0.045), mats.kitchenGloss);
+  fRight.position.set(0.30, 1.19, 2.585);
+  const fTop = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.10, 0.62), mats.kitchenGloss);
+  fTop.position.set(0.30, 2.33, 2.29);
+  const fBot = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.06, 0.62), mats.kitchenGloss);
+  fBot.position.set(0.30, 0.03, 2.29);
+  const fridgeGlowMat = new THREE.MeshStandardMaterial({
+    color: 0xe0f2fe, emissive: 0x7dd3fc, emissiveIntensity: 0.48, roughness: 0.35
+  });
+  const fInnerBack = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.18, 0.54), fridgeGlowMat);
+  fInnerBack.position.set(0.07, 1.16, 2.29);
+  const fVentBot = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.06, 0.54), mats.steel);
+  fVentBot.position.set(0.585, 0.03, 2.29);
+  const fVentTop = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.07, 0.54), mats.steel);
+  fVentTop.position.set(0.585, 2.34, 2.29);
+  fridgeGroup.add(fBack, fLeft, fRight, fTop, fBot, fInnerBack, fVentBot, fVentTop);
+
+  // Interior glass shelves tucked cleanly at back so zombies fit cleanly when waiting inside
+  const fShelfMat = new THREE.MeshPhysicalMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.55, roughness: 0.1 });
+  for (const sy of [1.45, 1.85]) {
+    const sh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.014, 0.52), fShelfMat);
+    sh.position.set(0.16, sy, 2.29);
+    fridgeGroup.add(sh);
+  }
+
+  // Hinged full-height fridge door pivoted at South edge (0.58, 0, 2.59) swinging out into +X kitchen
+  const fridgeDoorPivot = new THREE.Group();
+  fridgeDoorPivot.position.set(0.58, 0, 2.59);
+  const fDoor = new THREE.Mesh(new THREE.BoxGeometry(0.038, 2.24, 0.61), mats.kitchenGloss);
+  fDoor.position.set(0, 1.18, -0.30);
+  fDoor.castShadow = true; fDoor.receiveShadow = true;
+  const fSeam = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.008, 0.60), mats.darkMetal);
+  fSeam.position.set(0.020, 0.90, -0.30);
+  const fHandleTop = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.48, 8), mats.steel);
+  fHandleTop.position.set(0.032, 1.32, -0.53);
+  const fHandleBot = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.32, 8), mats.steel);
+  fHandleBot.position.set(0.032, 0.66, -0.53);
+  fridgeDoorPivot.add(fDoor, fSeam, fHandleTop, fHandleBot);
+  fridgeGroup.add(fridgeDoorPivot);
+  fridgeGroup.traverse(ch => { if (ch.isMesh) ch.userData.noDestroy = true; });
+  g.add(fridgeGroup);
   arch.addBoxCollider(0.30, 2.29, 0.62, 0.64);
-  const fSeam = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.008, 0.61), mats.darkMetal);
-  fSeam.position.set(0.602, 0.90, 2.29);
-  const fVentBot = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.09, 0.56), mats.steel);
-  fVentBot.position.set(0.602, 0.06, 2.29);
-  const fVentTop = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.07, 0.56), mats.steel);
-  fVentTop.position.set(0.602, 2.34, 2.29);
-  g.add(fSeam, fVentBot, fVentTop);
+  arch.fridgeControl = { doorPivot: fridgeDoorPivot, openTimer: 0, targetAngle: -1.68 };
 
   // West wall lower cabinets (X=0..0.60, Z=0.00..1.98)
   const kLowWest = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.87, 1.98), mats.kitchenGloss);
