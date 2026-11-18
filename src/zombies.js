@@ -893,12 +893,10 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
 
   let vipPending = true;
   let vipTimer = 8.0;
-  let fridgeSpawnedThisWave = false;
   let waveQueue = [];
 
   function startWave(num) {
     game.wave = num;
-    fridgeSpawnedThisWave = false;
     const baseNormal = 7;
     const extraHelmets = Math.min(3, Math.max(0, num - 1)); // +1 helmet zombie (2x HP) per wave after Wave 1, up to Wave 4
     const extraCreepers = Math.max(0, num - 4);             // +1 exploding creeper per wave after Wave 4
@@ -1021,15 +1019,7 @@ APP.createZombieSystem = function(scene, arch, blaster, camera) {
     const isCreeper = !isVip && spawnKind === 'creeper';
     const armored = !isVip && spawnKind === 'helmet';
     // VIP Minecraft character enters through the Front Door (Inngangsdør) down the hallway toward the living room!
-    let portal;
-    if (isVip) {
-      portal = BREACH_PORTALS.find(p => p.name === 'Inngangsdør') || BREACH_PORTALS[5];
-    } else if (!fridgeSpawnedThisWave && waveQueue.length <= 4) {
-      portal = BREACH_PORTALS.find(p => p.isFridge) || BREACH_PORTALS[0];
-    } else {
-      portal = BREACH_PORTALS[Math.floor(Math.random() * BREACH_PORTALS.length)];
-    }
-    if (portal.isFridge) fridgeSpawnedThisWave = true;
+    const portal = isVip ? (BREACH_PORTALS.find(p => p.name === 'Inngangsdør') || BREACH_PORTALS[5]) : BREACH_PORTALS[Math.floor(Math.random() * BREACH_PORTALS.length)];
     const runner = !isVip && !isCreeper && !armored && game.wave >= 3 && Math.random() < 0.25;
     const scale = armored ? 1.05 : (isCreeper ? 0.96 : 0.98 + Math.random() * 0.06);
     const rig = createZombieMesh(armored, scale, isVip, isCreeper);
